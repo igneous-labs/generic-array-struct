@@ -71,6 +71,14 @@ pub const CARTESIAN_IDX_X: usize = 0;
 pub const CARTESIAN_IDX_Y: usize = 1;
 ```
 
+## Usage Notes
+
+<div class="warning">
+
+Because this attribute modifies the struct definition, it must be placed above any derive attributes
+
+</div>
+
 ## MSRV
 
 `rustc 1.83.0` (stabilization of `core::mem::replace()` in `const`)

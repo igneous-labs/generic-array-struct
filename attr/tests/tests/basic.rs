@@ -2,9 +2,8 @@ use generic_array_struct::generic_array_struct;
 
 #[test]
 fn basic() {
-    // put us first to make sure we dont mess with other attributes
+    /// doc comment RGB
     #[generic_array_struct]
-    /// doc comment
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(transparent)]
     pub struct Rgb<U> {
