@@ -10,7 +10,7 @@ use syn::{
     PathSegment, Type, TypeArray, TypePath, Visibility,
 };
 
-/// The main attribute proc macro. See crate docs for example usage.
+/// The main attribute proc macro. See crate docs for usage.
 #[proc_macro_attribute]
 pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(input as DeriveInput);
@@ -109,8 +109,10 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
     data_struct.fields = Fields::Unnamed(FieldsUnnamed {
         paren_token: Paren::default(),
         unnamed: core::iter::once(Field {
-            attrs: Vec::new(),
+            // make tuple field pub so that theres no need
+            // for constructor methods and to always provide an escape hatch
             vis: Visibility::Public(Pub::default()),
+            attrs: Vec::new(),
             mutability: syn::FieldMutability::None,
             ident: None,
             colon_token: None,

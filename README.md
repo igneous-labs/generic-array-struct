@@ -2,6 +2,10 @@
 
 An attribute proc macro to convert structs with named fields of the same generic type into a single-array-field tuple struct with array-index-based accessor and mutator methods.
 
+## MSRV
+
+`rustc 1.83.0` (stabilization of [`core::mem::replace()`](`core::mem::replace()`) in `const`)
+
 ## Example Usage
 
 ```rust
@@ -73,12 +77,56 @@ pub const CARTESIAN_IDX_Y: usize = 1;
 
 ## Usage Notes
 
-<div class="warning">
+### Declaration Order
 
-Because this attribute modifies the struct definition, it must be placed above any derive attributes
+Because this attribute modifies the struct definition, it must be placed above any derive attributes or attributes that use the struct definition
 
-</div>
+#### WRONG ❌
 
-## MSRV
+```rust,compile_fail,E0609
+use generic_array_struct::generic_array_struct;
 
-`rustc 1.83.0` (stabilization of `core::mem::replace()` in `const`)
+// Fails to compile because #[generic_array_struct] is below #[derive] attribute
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[generic_array_struct]
+pub struct Cartesian<D> {
+    pub x: D,
+    pub y: D,
+}
+```
+
+#### RIGHT ✅
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Cartesian<D> {
+    pub x: D,
+    pub y: D,
+}
+```
+
+### Field Visibility
+
+All methods have the same visibility as that of the originally declared field in the struct.
+
+```rust,compile_fail,E0624
+mod private {
+    use generic_array_struct::generic_array_struct;
+
+    #[generic_array_struct]
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct Cartesian<T> {
+        // Note: fields are private
+        x: T,
+        y: T,
+    }
+}
+
+use private::Cartesian;
+
+// fails to compile because [`Cartesian::const_with_x`] is private
+const ONE_COMMA_ZERO: Cartesian<f64> = Cartesian([0.0; 2]).const_with_x(1.0);
+```
