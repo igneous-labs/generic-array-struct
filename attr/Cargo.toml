@@ -1,6 +1,6 @@
 [package]
-name = "generic-array-struct-attr"
-version = "0.1.0"
+name = "generic-array-struct"
+version = { workspace = true }
 edition = { workspace = true }
 
 [lib]

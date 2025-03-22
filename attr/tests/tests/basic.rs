@@ -1,4 +1,4 @@
-use generic_array_struct_attr::generic_array_struct;
+use generic_array_struct::generic_array_struct;
 
 #[test]
 fn basic() {
@@ -6,6 +6,7 @@ fn basic() {
     #[generic_array_struct]
     /// doc comment
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+    #[repr(transparent)]
     pub struct Rgb<U> {
         pub r: U,
         pub g: U,
@@ -34,7 +35,11 @@ fn const_basic() {
         y: D,
     }
 
-    const ONE_COMMA_TWO: Cartesian<f64> = Cartesian([0.0; 2]).const_with_x(1.0).const_with_y(2.0);
+    impl Cartesian<f64> {
+        const ORIGIN: Self = Self([0.0; 2]);
+    }
+
+    const ONE_COMMA_TWO: Cartesian<f64> = Cartesian::ORIGIN.const_with_x(1.0).const_with_y(2.0);
 
     assert_eq!(*ONE_COMMA_TWO.x(), 1.0);
     assert_eq!(*ONE_COMMA_TWO.y(), 2.0);

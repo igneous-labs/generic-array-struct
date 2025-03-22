@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use heck::ToShoutySnakeCase;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
@@ -8,6 +10,7 @@ use syn::{
     PathSegment, Type, TypeArray, TypePath, Visibility,
 };
 
+/// The main attribute proc macro. See crate docs for example usage.
 #[proc_macro_attribute]
 pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(input as DeriveInput);
@@ -68,7 +71,7 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
                         &self.0[#idx_ident]
                     }
 
-                    /// Returns the old field valuee
+                    /// Returns the old field value
                     #[inline]
                     #field_vis const fn #set_ident(&mut self, val: T) -> T {
                         core::mem::replace(&mut self.0[#idx_ident], val)
@@ -161,7 +164,9 @@ fn field_idx_ident(struct_ident: &Ident, field_ident: &Ident) -> Ident {
 }
 
 /// A plain path with a single segment
-/// e.g. `T`, `RGB_LEN`
+/// e.g.
+/// - `T` (as in generic type param)
+/// - `RGB_LEN`
 fn path_from_var(ident: Ident) -> Path {
     Path {
         leading_colon: None,
