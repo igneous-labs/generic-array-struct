@@ -7,8 +7,13 @@ fn basic() {
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(transparent)]
     pub struct Rgb<U> {
+        /// Red
         pub r: U,
+
+        /// Green
         pub g: U,
+
+        /// Blue
         pub b: U,
     }
 

@@ -37,9 +37,6 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
             (0usize, quote! {}, quote! {}, quote! {}),
             |(n_fields, mut fields_idx_consts, mut get_set_with_impls, mut const_with_impls),
              (i, field)| {
-                if !field.attrs.is_empty() {
-                    panic!("{MACRO_NAME} does not work with field attributes");
-                }
                 let Type::Path(expect_same_generic) = &field.ty else {
                     panic!("{MACRO_NAME} {REQ_ALL_FIELDS_SAME_GENERIC_TYPE_ERRMSG}")
                 };
@@ -65,7 +62,10 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
                 // fn r(), set_r(), with_r()
                 let set_ident = format_ident!("set_{field_ident}");
                 let with_ident = format_ident!("with_{field_ident}");
+                // preserve attributes such as doc comments on getter method
+                let field_attrs = &field.attrs;
                 get_set_with_impls.extend(quote! {
+                    #(#field_attrs)*
                     #[inline]
                     #field_vis const fn #field_ident(&self) -> &T {
                         &self.0[#idx_ident]

@@ -15,7 +15,10 @@ use generic_array_struct::generic_array_struct;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Cartesian<T> {
+    /// x-coordinate
     pub x: T,
+
+    /// y-coordinate
     pub y: T,
 }
 ```
@@ -28,29 +31,37 @@ expands to
 pub struct Cartesian<T>(pub [T; CARTESIAN_LEN]);
 
 impl<T> Cartesian<T> {
+    /// x-coordinate
+    #[inline]
     pub const fn x(&self) -> &T {
         &self.0[CARTESIAN_IDX_X]
     }
 
     /// Returns the old field value
+    #[inline]
     pub const fn set_x(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_X], val)
     }
 
+    #[inline]
     pub fn with_x(mut self, val: T) -> Self {
         self.0[CARTESIAN_IDX_X] = val;
         self
     }
 
+    /// y-coordinate
+    #[inline]
     pub const fn y(&self) -> &T {
         &self.0[CARTESIAN_IDX_Y]
     }
 
     /// Returns the old field value
+    #[inline]
     pub const fn set_y(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_Y], val)
     }
 
+    #[inline]
     pub fn with_y(mut self, val: T) -> Self {
         self.0[CARTESIAN_IDX_Y] = val;
         self
@@ -58,11 +69,13 @@ impl<T> Cartesian<T> {
 }
 
 impl<T: Copy> Cartesian<T> {
+    #[inline]
     pub const fn const_with_x(mut self, val: T) -> Self {
         self.0[CARTESIAN_IDX_X] = val;
         self
     }
 
+    #[inline]
     pub const fn const_with_y(mut self, val: T) -> Self {
         self.0[CARTESIAN_IDX_Y] = val;
         self
