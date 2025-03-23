@@ -27,8 +27,11 @@ fn basic() {
     assert_eq!(dut.set_r(1), 0);
     assert_eq!(*dut.r(), 1);
 
-    let dut = dut.with_g(2).with_b(3);
+    let mut dut = dut.with_g(2).with_b(3);
     assert_eq!(dut.0, [1, 2, 3]);
+
+    *dut.r_mut() = 4;
+    assert_eq!(dut.0, [4, 2, 3]);
 }
 
 #[test]
