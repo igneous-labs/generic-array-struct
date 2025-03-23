@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Breaking
+
+- new visibility attribute arg (`#[generic_array_struct(pub(crate))]`) means `.0` field is private by default if attribute is used without any args (`#[generic_array_struct]`)
+
 ### Added
 
 - `*_mut(&mut self) -> &mut T` methods
