@@ -4,15 +4,35 @@ use heck::ToShoutySnakeCase;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
+    parse::{Parse, ParseStream},
     parse_macro_input,
-    token::{Bracket, Paren, Pub, Semi},
+    token::{Bracket, Paren, Semi},
     Data, DeriveInput, Expr, ExprPath, Field, Fields, FieldsUnnamed, GenericParam, Ident, Path,
     PathSegment, Type, TypeArray, TypePath, Visibility,
 };
 
+struct AttrArgs {
+    array_field_vis: Visibility,
+}
+
+impl Parse for AttrArgs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.is_empty() {
+            return Ok(Self {
+                array_field_vis: Visibility::Inherited,
+            });
+        }
+        Ok(Self {
+            array_field_vis: input.parse()?,
+        })
+    }
+}
+
 /// The main attribute proc macro. See crate docs for usage.
 #[proc_macro_attribute]
-pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenStream {
+    let AttrArgs { array_field_vis } = parse_macro_input!(attr_arg as AttrArgs);
+
     let mut input = parse_macro_input!(input as DeriveInput);
 
     let struct_vis = &input.vis;
@@ -120,9 +140,7 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
     data_struct.fields = Fields::Unnamed(FieldsUnnamed {
         paren_token: Paren::default(),
         unnamed: core::iter::once(Field {
-            // make tuple field pub so that theres no need
-            // for constructor methods and to always provide an escape hatch
-            vis: Visibility::Public(Pub::default()),
+            vis: array_field_vis,
             attrs: Vec::new(),
             mutability: syn::FieldMutability::None,
             ident: None,

@@ -28,7 +28,7 @@ expands to
 ```rust
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct Cartesian<T>(pub [T; CARTESIAN_LEN]);
+pub struct Cartesian<T>([T; CARTESIAN_LEN]);
 
 impl<T> Cartesian<T> {
     /// x-coordinate
@@ -152,4 +152,42 @@ use private::Cartesian;
 
 // fails to compile because [`Cartesian::const_with_x`] is private
 const ONE_COMMA_ZERO: Cartesian<f64> = Cartesian([0.0; 2]).const_with_x(1.0);
+```
+
+### `.0` Visibility Attribute Argument
+
+The attribute accepts a single optional [`syn::Visibility`](`syn::Visibility`) arg that controls the visibility of the resulting `.0` array field. 
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+```
+
+generates
+
+```rust
+pub struct Cartesian<T>([T; 2]);
+```
+
+while
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(pub(crate))]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+```
+
+generates
+
+```rust
+pub struct Cartesian<T>(pub(crate) [T; 2]);
 ```
