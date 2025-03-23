@@ -1,0 +1,11 @@
+[package]
+name = "generic-array-struct-cartesian-example"
+publish = false
+edition.workspace = true
+version.workspace = true
+license-file.workspace = true
+description.workspace = true
+repository.workspace = true
+
+[dependencies]
+generic-array-struct = { workspace = true }

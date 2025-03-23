@@ -1,7 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "attr"
+    "attr",
+    "examples/*",
 ]
 
 
@@ -16,3 +17,6 @@ repository = "https://github.com/igneous-labs/generic-array-struct"
 heck = { version = "^0.5", default-features = false }
 quote = { version = "^1", default-features = false }
 syn = { version = "^2", default-features = false }
+
+# workspace members
+generic-array-struct = { path = "./attr" }

@@ -12,6 +12,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic-array-struct-cartesian-example"
+version = "0.1.0"
+dependencies = [
+ "generic-array-struct",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
