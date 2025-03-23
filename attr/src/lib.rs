@@ -52,7 +52,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
     }
     let generic_param_ident = &generic.ident;
 
-    let (n_fields, fields_idx_consts, get_set_with_impls, const_with_impls) =
+    let (n_fields, fields_idx_consts, accessor_mutator_impls, const_with_impls) =
         fields.named.iter().enumerate().fold(
             (0usize, quote! {}, quote! {}, quote! {}),
             |(
@@ -168,7 +168,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
         #struct_vis const #len_ident: usize = #n_fields;
 
         impl<T> #struct_ident<T> {
-            #get_set_with_impls
+            #accessor_mutator_impls
         }
 
         impl<T: Copy> #struct_ident<T> {

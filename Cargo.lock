@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "generic-array-struct"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "heck",
  "quote",
@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "generic-array-struct-cartesian-example"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "generic-array-struct",
 ]
