@@ -35,7 +35,12 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
     let (n_fields, fields_idx_consts, get_set_with_impls, const_with_impls) =
         fields.named.iter().enumerate().fold(
             (0usize, quote! {}, quote! {}, quote! {}),
-            |(n_fields, mut fields_idx_consts, mut get_set_with_impls, mut const_with_impls),
+            |(
+                n_fields,
+                mut fields_idx_consts,
+                mut accessor_mutator_impls,
+                mut const_with_impls,
+            ),
              (i, field)| {
                 let Type::Path(expect_same_generic) = &field.ty else {
                     panic!("{MACRO_NAME} {REQ_ALL_FIELDS_SAME_GENERIC_TYPE_ERRMSG}")
@@ -59,16 +64,22 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
                     #field_vis const #idx_ident: usize = #i;
                 });
 
-                // fn r(), set_r(), with_r()
+                // fn r(), r_mut(), set_r(), with_r()
+                let ident_mut = format_ident!("{field_ident}_mut");
                 let set_ident = format_ident!("set_{field_ident}");
                 let with_ident = format_ident!("with_{field_ident}");
                 // preserve attributes such as doc comments on getter method
                 let field_attrs = &field.attrs;
-                get_set_with_impls.extend(quote! {
+                accessor_mutator_impls.extend(quote! {
                     #(#field_attrs)*
                     #[inline]
                     #field_vis const fn #field_ident(&self) -> &T {
                         &self.0[#idx_ident]
+                    }
+
+                    #[inline]
+                    #field_vis const fn #ident_mut(&mut self) -> &mut T {
+                        &mut self.0[#idx_ident]
                     }
 
                     /// Returns the old field value
@@ -97,7 +108,7 @@ pub fn generic_array_struct(_attr: TokenStream, input: TokenStream) -> TokenStre
                 (
                     n_fields + 1,
                     fields_idx_consts,
-                    get_set_with_impls,
+                    accessor_mutator_impls,
                     const_with_impls,
                 )
             },

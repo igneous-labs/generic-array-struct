@@ -37,6 +37,11 @@ impl<T> Cartesian<T> {
         &self.0[CARTESIAN_IDX_X]
     }
 
+    #[inline]
+    pub const fn x_mut(&mut self) -> &mut T {
+        &mut self.0[CARTESIAN_IDX_X]
+    }
+
     /// Returns the old field value
     #[inline]
     pub const fn set_x(&mut self, val: T) -> T {
@@ -53,6 +58,11 @@ impl<T> Cartesian<T> {
     #[inline]
     pub const fn y(&self) -> &T {
         &self.0[CARTESIAN_IDX_Y]
+    }
+
+    #[inline]
+    pub const fn y_mut(&mut self) -> &mut T {
+        &mut self.0[CARTESIAN_IDX_Y]
     }
 
     /// Returns the old field value
