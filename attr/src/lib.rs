@@ -37,15 +37,18 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
 
     let struct_vis = &input.vis;
     let struct_ident = &input.ident;
-    let Data::Struct(data_struct) = &mut input.data else {
-        panic!("{MACRO_NAME} only works with structs");
+    let data_struct = match &mut input.data {
+        Data::Struct(ds) => ds,
+        _ => panic!("{MACRO_NAME} only works with structs"),
     };
-    let Fields::Named(fields) = &data_struct.fields else {
-        panic!("{MACRO_NAME} only works with structs with named fields");
+    let fields = match &data_struct.fields {
+        Fields::Named(f) => f,
+        _ => panic!("{MACRO_NAME} only works with structs with named fields"),
     };
     let mut generic_iter = input.generics.params.iter();
-    let Some(GenericParam::Type(generic)) = generic_iter.next() else {
-        panic!("{MACRO_NAME} {REQ_SINGLE_GENERIC_TYPE_PARAM_ERRMSG}");
+    let generic = match generic_iter.next() {
+        Some(GenericParam::Type(g)) => g,
+        _ => panic!("{MACRO_NAME} {REQ_SINGLE_GENERIC_TYPE_PARAM_ERRMSG}"),
     };
     if generic_iter.next().is_some() {
         panic!("{MACRO_NAME} {REQ_SINGLE_GENERIC_TYPE_PARAM_ERRMSG}");
@@ -62,8 +65,9 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                 mut const_with_impls,
             ),
              (i, field)| {
-                let Type::Path(expect_same_generic) = &field.ty else {
-                    panic!("{MACRO_NAME} {REQ_ALL_FIELDS_SAME_GENERIC_TYPE_ERRMSG}")
+                let expect_same_generic = match &field.ty {
+                    Type::Path(g) => g,
+                    _ => panic!("{MACRO_NAME} {REQ_ALL_FIELDS_SAME_GENERIC_TYPE_ERRMSG}"),
                 };
                 if !expect_same_generic
                     .path
@@ -98,13 +102,13 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                     }
 
                     #[inline]
-                    #field_vis const fn #ident_mut(&mut self) -> &mut T {
+                    #field_vis fn #ident_mut(&mut self) -> &mut T {
                         &mut self.0[#idx_ident]
                     }
 
                     /// Returns the old field value
                     #[inline]
-                    #field_vis const fn #set_ident(&mut self, val: T) -> T {
+                    #field_vis fn #set_ident(&mut self, val: T) -> T {
                         core::mem::replace(&mut self.0[#idx_ident], val)
                     }
 

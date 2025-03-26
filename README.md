@@ -4,7 +4,7 @@ An attribute proc macro to convert structs with named fields of the same generic
 
 ## MSRV
 
-`rustc 1.83.0` (stabilization of [`core::mem::replace()`](`core::mem::replace()`) in `const`)
+`rustc 1.64.0` (`const fn`, `workspace = true`)
 
 ## Example Usage
 
@@ -38,13 +38,13 @@ impl<T> Cartesian<T> {
     }
 
     #[inline]
-    pub const fn x_mut(&mut self) -> &mut T {
+    pub fn x_mut(&mut self) -> &mut T {
         &mut self.0[CARTESIAN_IDX_X]
     }
 
     /// Returns the old field value
     #[inline]
-    pub const fn set_x(&mut self, val: T) -> T {
+    pub fn set_x(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_X], val)
     }
 
@@ -61,13 +61,13 @@ impl<T> Cartesian<T> {
     }
 
     #[inline]
-    pub const fn y_mut(&mut self) -> &mut T {
+    pub fn y_mut(&mut self) -> &mut T {
         &mut self.0[CARTESIAN_IDX_Y]
     }
 
     /// Returns the old field value
     #[inline]
-    pub const fn set_y(&mut self, val: T) -> T {
+    pub fn set_y(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_Y], val)
     }
 
