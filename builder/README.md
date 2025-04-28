@@ -38,6 +38,7 @@ pub struct Cartesian<T> {
     pub y: T,
 }
 
+// The const generic booleans track which fields have been set
 #[repr(transparent)]
 pub struct CartesianBuilder<T, const S0: bool, const S1: bool>(Cartesian<core::mem::MaybeUninit<T>>);
 
@@ -55,44 +56,45 @@ impl<T> CartesianBuilder<T, false, false> {
 //   Hopefully rustc is able to optimize away all the 
 //   transmute_copy() + core::mem::forget()s and use the same memory
 
-impl<T, const S0: bool> CartesianBuilder<T, S0, false> {
+impl<T, const S1: bool> CartesianBuilder<T, false, S1> {
     #[inline]
     pub fn with_x(
         mut self,
         val: T,
-    ) -> CartesianBuilder<T, S0, true> {
+    ) -> CartesianBuilder<T, true, S1> {
         *self.0.x_mut() = core::mem::MaybeUninit::new(val);
-        let mut res = unsafe {
-            core::mem::transmute_copy::<CartesianBuilder<T, S0, false>, CartesianBuilder<T, S0, true>>(&self)
-        };
-        core::mem::forget(self);
-        res
+        unsafe {
+            core::mem::transmute_copy::<_, CartesianBuilder<T, true, S1>>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
     }
 }
 
-impl<T, const S1: bool> CartesianBuilder<T, false, S1> {
+impl<T, const S0: bool> CartesianBuilder<T, S0, false> {
     #[inline]
     pub fn with_y(
         mut self,
         val: T,
-    ) -> CartesianBuilder<T, true, S1> {
+    ) -> CartesianBuilder<T, S0, true> {
         *self.0.y_mut() = core::mem::MaybeUninit::new(val);
-        let mut res = unsafe {
-            core::mem::transmute_copy::<CartesianBuilder<T, false, S1>, CartesianBuilder<T, true, S1>>(&self)
-        };
-        core::mem::forget(self);
-        res
+        unsafe {
+            core::mem::transmute_copy::<_, CartesianBuilder<T, S0, true>>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
     }
 }
 
 impl<T> CartesianBuilder<T, true, true> {
     #[inline]
     pub fn build(self) -> Cartesian<T> {
-        let mut res = unsafe {
-            core::mem::transmute_copy::<Cartesian<core::mem::MaybeUninit<T>>, Cartesian<T>>(&self.0)
-        };
-        core::mem::forget(self);
-        res
+        // if not `repr(transparent)`, must use self.0 + mem::forget() instead of self 
+        unsafe {
+            core::mem::transmute_copy::<_, Cartesian<T>>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
     }
 }
 
