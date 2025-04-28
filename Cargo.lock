@@ -13,6 +13,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "generic-array-struct-builder"
+version = "0.2.0"
+dependencies = [
+ "generic-array-struct",
+ "generic-array-struct-common",
+ "heck",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "generic-array-struct-cartesian-example"
 version = "0.2.0"
 dependencies = [
