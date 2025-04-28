@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+use generic_array_struct_common::with_ident;
 use heck::ToShoutySnakeCase;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
@@ -87,7 +88,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                 // fn r(), r_mut(), set_r(), with_r()
                 let ident_mut = format_ident!("{field_ident}_mut");
                 let set_ident = format_ident!("set_{field_ident}");
-                let with_ident = format_ident!("with_{field_ident}");
+                let with_ident_created = with_ident(field_ident);
                 // preserve attributes such as doc comments on getter method
                 let field_attrs = &field.attrs;
                 accessor_mutator_impls.extend(quote! {
@@ -109,7 +110,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                     }
 
                     #[inline]
-                    #field_vis fn #with_ident(mut self, val: T) -> Self {
+                    #field_vis fn #with_ident_created(mut self, val: T) -> Self {
                         self.0[#idx_ident] = val;
                         self
                     }
