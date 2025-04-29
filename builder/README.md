@@ -2,7 +2,7 @@
 
 An attribute proc macro to create a builder struct of a [`generic-array-struct`](https://docs.rs/generic-array-struct) that at compile-time ensures that every field is set exactly once.
 
-This crate must be used with structs that derive `#[generic_array_struct]`.
+This crate must be used with structs that are `#[generic_array_struct]`.
 
 ## Implementation
 
@@ -42,11 +42,13 @@ pub struct Cartesian<T> {
 #[repr(transparent)]
 pub struct CartesianBuilder<T, const S0: bool, const S1: bool>(Cartesian<core::mem::MaybeUninit<T>>);
 
-impl<T> CartesianBuilder<T, false, false> {
+pub type NewCartesianBuilder<T> = CartesianBuilder<T, false, false>;
+
+impl<T> NewCartesianBuilder<T> {
     const _UNINIT: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
 
     #[inline]
-    pub const fn new() -> Self {
+    pub const fn start() -> Self {
         Self(Cartesian([Self::_UNINIT; CARTESIAN_LEN]))
     }
 }
@@ -59,11 +61,12 @@ impl<T> CartesianBuilder<T, false, false> {
 
 impl<T, const S1: bool> CartesianBuilder<T, false, S1> {
     #[inline]
-    pub fn with_x(
+    pub const fn with_x(
         mut self,
         val: T,
     ) -> CartesianBuilder<T, true, S1> {
-        *self.0.x_mut() = core::mem::MaybeUninit::new(val);
+        // use raw array indices instead of mut references to preserve const
+        self.0.0[CARTESIAN_IDX_X] = core::mem::MaybeUninit::new(val);
         unsafe {
             core::mem::transmute_copy::<_, _>(
                 &core::mem::ManuallyDrop::new(self)
@@ -74,11 +77,11 @@ impl<T, const S1: bool> CartesianBuilder<T, false, S1> {
 
 impl<T, const S0: bool> CartesianBuilder<T, S0, false> {
     #[inline]
-    pub fn with_y(
+    pub const fn with_y(
         mut self,
         val: T,
     ) -> CartesianBuilder<T, S0, true> {
-        *self.0.y_mut() = core::mem::MaybeUninit::new(val);
+        self.0.0[CARTESIAN_IDX_Y] = core::mem::MaybeUninit::new(val);
         unsafe {
             core::mem::transmute_copy::<_, _>(
                 &core::mem::ManuallyDrop::new(self)
@@ -89,8 +92,8 @@ impl<T, const S0: bool> CartesianBuilder<T, S0, false> {
 
 impl<T> CartesianBuilder<T, true, true> {
     #[inline]
-    pub fn build(self) -> Cartesian<T> {
-        // if not `repr(transparent)`, must use self.0 + mem::forget() instead of self,
+    pub const fn build(self) -> Cartesian<T> {
+        // if not `repr(transparent)`, must use `self.0` instead of `self`,
         // but we always enforce repr(transparent)
         unsafe {
             core::mem::transmute_copy::<_, _>(
