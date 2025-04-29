@@ -1,13 +1,12 @@
 #![doc = include_str!("../README.md")]
 
 use builder::impl_builder;
-use generic_array_struct_common::{
-    errs::panic_req_all_fields_same_generic,
-    idents::{
-        array_len_ident, const_with_ident, field_idx_ident, ident_mut, set_ident, with_ident,
-    },
-    utils::path_from_ident,
-    GenericArrayStructParams,
+use errs::{
+    panic_only_works_with_structs, panic_only_works_with_structs_with_named_fields,
+    panic_req_all_fields_same_generic, panic_req_single_generic,
+};
+use idents::{
+    array_len_ident, const_with_ident, field_idx_ident, ident_mut, set_ident, with_ident,
 };
 use proc_macro::TokenStream;
 use quote::quote;
@@ -15,11 +14,70 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
     token::{Bracket, Paren, Semi},
-    DeriveInput, Expr, ExprPath, Field, Fields, FieldsUnnamed, Ident, Type, TypeArray, TypePath,
-    Visibility,
+    Data, DataStruct, DeriveInput, Expr, ExprPath, Field, Fields, FieldsNamed, FieldsUnnamed,
+    GenericParam, Ident, Type, TypeArray, TypePath, Visibility,
 };
+use utils::path_from_ident;
 
 mod builder;
+mod errs;
+mod idents;
+mod utils;
+
+const MACRO_NAME: &str = "generic_array_struct";
+
+#[repr(transparent)]
+struct GenericArrayStructParams(DeriveInput);
+
+/// Accessors
+impl GenericArrayStructParams {
+    #[inline]
+    pub fn struct_vis(&self) -> &Visibility {
+        &self.0.vis
+    }
+
+    #[inline]
+    pub fn struct_ident(&self) -> &Ident {
+        &self.0.ident
+    }
+
+    #[inline]
+    pub fn generic_ident(&self) -> &Ident {
+        let mut generic_iter = self.0.generics.params.iter();
+        let generic = match generic_iter.next() {
+            Some(GenericParam::Type(g)) => g,
+            _ => panic_req_single_generic(),
+        };
+        if generic_iter.next().is_some() {
+            panic_req_single_generic();
+        }
+        &generic.ident
+    }
+
+    #[inline]
+    pub fn data_struct(&self) -> &DataStruct {
+        match &self.0.data {
+            Data::Struct(ds) => ds,
+            _ => panic_only_works_with_structs(),
+        }
+    }
+
+    #[inline]
+    pub fn data_struct_mut(&mut self) -> &mut DataStruct {
+        match &mut self.0.data {
+            Data::Struct(ds) => ds,
+            _ => panic_only_works_with_structs(),
+        }
+    }
+
+    #[inline]
+    pub fn fields_named(&self) -> &FieldsNamed {
+        match &self.data_struct().fields {
+            Fields::Named(f) => f,
+            _ => panic_only_works_with_structs_with_named_fields(),
+        }
+    }
+}
 
 struct AttrArgs {
     array_field_vis: Visibility,
@@ -183,7 +241,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                 len: Expr::Path(ExprPath {
                     attrs: Vec::new(),
                     qself: None,
-                    path: path_from_ident(len_ident.clone()),
+                    path: path_from_ident(len_ident),
                 }),
             }),
         })

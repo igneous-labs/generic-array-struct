@@ -8,7 +8,7 @@ use syn::{Ident, Path, PathSegment};
 /// This is required because certain AST nodes require Path
 /// instead of Ident e.g. the elem type of an array
 #[inline]
-pub fn path_from_ident(ident: Ident) -> Path {
+pub(crate) fn path_from_ident(ident: Ident) -> Path {
     Path {
         leading_colon: None,
         segments: core::iter::once(PathSegment {

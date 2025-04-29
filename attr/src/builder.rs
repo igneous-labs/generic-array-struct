@@ -2,11 +2,6 @@
 
 use std::iter::once;
 
-use generic_array_struct_common::{
-    idents::{array_len_ident, field_idx_ident, with_ident},
-    utils::path_from_ident,
-    GenericArrayStructParams,
-};
 use quote::{format_ident, quote};
 use syn::{
     punctuated::Punctuated,
@@ -15,8 +10,14 @@ use syn::{
     Generics, Ident, Lit, LitBool, Token, Type, TypeParam, TypePath, Visibility,
 };
 
+use crate::{
+    idents::{array_len_ident, field_idx_ident, with_ident},
+    utils::path_from_ident,
+    GenericArrayStructParams,
+};
+
 /// Outputs the token stream to append
-pub fn impl_builder(
+pub(crate) fn impl_builder(
     params: &GenericArrayStructParams,
     struct_vis: &Visibility,
 ) -> proc_macro2::TokenStream {

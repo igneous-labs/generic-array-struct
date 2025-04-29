@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "attr",
-    "common",
     "examples/*",
 ]
 
@@ -23,4 +22,3 @@ syn = { version = "^2", default-features = false }
 
 # workspace members
 generic-array-struct = { path = "./attr" }
-generic-array-struct-common = { path = "./common" }
