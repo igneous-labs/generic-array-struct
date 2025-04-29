@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "attr",
+    "common",
     "examples/*",
 ]
 
@@ -16,8 +17,10 @@ rust-version = "1.64"
 
 [workspace.dependencies]
 heck = { version = "^0.5", default-features = false }
+proc-macro2 = { version = "^1", default-features = false }
 quote = { version = "^1", default-features = false }
 syn = { version = "^2", default-features = false }
 
 # workspace members
 generic-array-struct = { path = "./attr" }
+generic-array-struct-common = { path = "./common" }

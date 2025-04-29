@@ -92,6 +92,9 @@ impl<T: Copy> Cartesian<T> {
     }
 }
 
+// consts are exported with prefix instead of as associated consts
+// so that we dont need turbofish e.g. `Cartesian::<f32>::IDX_X`
+
 pub const CARTESIAN_LEN: usize = 2;
 
 pub const CARTESIAN_IDX_X: usize = 0;
@@ -154,9 +157,168 @@ use private::Cartesian;
 const ONE_COMMA_ZERO: Cartesian<f64> = Cartesian([0.0; 2]).const_with_x(1.0);
 ```
 
-### `.0` Visibility Attribute Argument
+### Attribute args
 
-The attribute accepts a single optional [`syn::Visibility`](`syn::Visibility`) arg that controls the visibility of the resulting `.0` array field. 
+The attribute can be further customized by the following space-separated positional args.
+
+#### Builder Arg
+
+An optional `builder` positional arg controls whether to generate a builder struct that, at compile-time, ensures that every field is set exactly once before creating the struct.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder pub)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+expands to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(pub)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+// The const generic booleans track which fields have been set
+#[repr(transparent)]
+pub struct CartesianBuilder<Z, const S0: bool, const S1: bool>(Cartesian<core::mem::MaybeUninit<Z>>);
+
+pub type NewCartesianBuilder<Z> = CartesianBuilder<Z, false, false>;
+
+impl<T> NewCartesianBuilder<T> {
+    const _UNINIT: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
+
+    #[inline]
+    pub const fn start() -> Self {
+        Self(Cartesian([Self::_UNINIT; CARTESIAN_LEN]))
+    }
+}
+
+// impl notes:
+// - cannot use transmute() due to generic, cannot move out of struct due to Drop.
+//   Hopefully rustc is able to optimize away all the 
+//   transmute_copy() + core::mem::forget()s and use the same memory.
+//   I cannot wait for array transmutes to be stabilized.
+
+impl<Z, const S1: bool> CartesianBuilder<Z, false, S1> {
+    #[inline]
+    pub fn with_x(
+        mut self,
+        val: Z,
+    ) -> CartesianBuilder<Z, true, S1> {
+        self.0.0[CARTESIAN_IDX_X] = core::mem::MaybeUninit::new(val);
+        unsafe {
+            core::mem::transmute_copy::<_, _>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
+    }
+}
+
+impl<Z, const S0: bool> CartesianBuilder<Z, S0, false> {
+    #[inline]
+    pub fn with_y(
+        mut self,
+        val: Z,
+    ) -> CartesianBuilder<Z, S0, true> {
+        self.0.0[CARTESIAN_IDX_Y] = core::mem::MaybeUninit::new(val);
+        unsafe {
+            core::mem::transmute_copy::<_, _>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
+    }
+}
+
+impl<Z> CartesianBuilder<Z, true, true> {
+    #[inline]
+    pub fn build(self) -> Cartesian<Z> {
+        // if not `repr(transparent)`, must use `self.0` instead of `self`,
+        // but we always enforce repr(transparent)
+        unsafe {
+            core::mem::transmute_copy::<_, _>(
+                &core::mem::ManuallyDrop::new(self)
+            )
+        }
+    }
+}
+
+/// This gets called if the Builder struct was dropped before `self.build()` was called
+impl<Z, const S0: bool, const S1: bool> Drop for CartesianBuilder<Z, S0, S1> {
+    fn drop(&mut self) {
+        if S0 {
+            unsafe {
+                self.0.0[CARTESIAN_IDX_X].assume_init_drop();
+            }
+        }
+        if S1 {
+            unsafe {
+                self.0.0[CARTESIAN_IDX_Y].assume_init_drop();
+            } 
+        }
+    }
+}
+```
+
+##### Example Builder Usages
+
+###### Attempting to build before setting all fields
+
+```rust,compile_fail,E0599
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder)]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// y has not been set, this fails to compile with
+// `method not found in `CartesianBuilder<{integer}, true, false>`
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).build();
+```
+
+###### Attempting to set a field twice
+
+```rust,compile_fail,E0599
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder pub)]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// attempted to set x twice, this fails to compile with
+// `no method named `with_x` found for struct `CartesianBuilder<{integer}, true, true>` in the current scope`
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).with_x(2).build();
+```
+
+###### Proper initialization
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder pub(crate))]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// proper initialization after setting all fields exactly once
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).build();
+```
+
+#### `.0` Visibility Attribute Arg
+
+The attribute's second position arg is a [`syn::Visibility`](`syn::Visibility`) that controls the visibility of the resulting `.0` array field. 
 
 ```rust
 use generic_array_struct::generic_array_struct;
