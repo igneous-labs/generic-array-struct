@@ -7,16 +7,7 @@ name = "generic-array-struct"
 version = "0.3.0-bc"
 dependencies = [
  "generic-array-struct-common",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "generic-array-struct-builder"
-version = "0.3.0-bc"
-dependencies = [
- "generic-array-struct",
- "generic-array-struct-common",
+ "proc-macro2",
  "quote",
  "syn",
 ]

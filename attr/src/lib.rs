@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+use builder::impl_builder;
 use generic_array_struct_common::{
     errs::panic_req_all_fields_same_generic,
     idents::{
@@ -14,23 +15,41 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
     token::{Bracket, Paren, Semi},
-    DeriveInput, Expr, ExprPath, Field, Fields, FieldsUnnamed, Type, TypeArray, TypePath,
+    DeriveInput, Expr, ExprPath, Field, Fields, FieldsUnnamed, Ident, Type, TypeArray, TypePath,
     Visibility,
 };
 
+mod builder;
+
 struct AttrArgs {
     array_field_vis: Visibility,
+    should_gen_builder: bool,
 }
 
 impl Parse for AttrArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
+        let should_gen_builder = if input.peek(Ident) {
+            let id: Ident = input.parse()?;
+            if id != "builder" {
+                panic!("Expected token `builder`")
+            } else {
+                true
+            }
+        } else {
+            false
+        };
+
         if input.is_empty() {
             return Ok(Self {
                 array_field_vis: Visibility::Inherited,
+                should_gen_builder,
             });
         }
+
+        let array_field_vis = input.parse()?;
         Ok(Self {
-            array_field_vis: input.parse()?,
+            array_field_vis,
+            should_gen_builder,
         })
     }
 }
@@ -38,7 +57,10 @@ impl Parse for AttrArgs {
 /// The main attribute proc macro. See crate docs for usage.
 #[proc_macro_attribute]
 pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenStream {
-    let AttrArgs { array_field_vis } = parse_macro_input!(attr_arg as AttrArgs);
+    let AttrArgs {
+        array_field_vis,
+        should_gen_builder,
+    } = parse_macro_input!(attr_arg as AttrArgs);
 
     let input = parse_macro_input!(input as DeriveInput);
     let mut params = GenericArrayStructParams(input);
@@ -122,6 +144,26 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
 
     let len_ident = array_len_ident(params.struct_ident());
 
+    let struct_vis = params.struct_vis();
+    let struct_ident = params.struct_ident();
+    let mut res = quote! {
+        #struct_vis const #len_ident: usize = #n_fields;
+
+        impl<T> #struct_ident<T> {
+            #accessor_mutator_impls
+        }
+
+        impl<T: Copy> #struct_ident<T> {
+            #const_with_impls
+        }
+
+        #fields_idx_consts
+    };
+
+    if should_gen_builder {
+        res.extend(impl_builder(&params));
+    }
+
     // finally, replace the struct defn with a single array field tuple struct
     params.data_struct_mut().fields = Fields::Unnamed(FieldsUnnamed {
         paren_token: Paren::default(),
@@ -147,22 +189,6 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
         })
         .collect(),
     });
-
-    let struct_vis = params.struct_vis();
-    let struct_ident = params.struct_ident();
-    let mut res = quote! {
-        #struct_vis const #len_ident: usize = #n_fields;
-
-        impl<T> #struct_ident<T> {
-            #accessor_mutator_impls
-        }
-
-        impl<T: Copy> #struct_ident<T> {
-            #const_with_impls
-        }
-
-        #fields_idx_consts
-    };
 
     // extend with original input with modified struct defn
     let GenericArrayStructParams(input) = params;

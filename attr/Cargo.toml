@@ -11,6 +11,7 @@ rust-version = { workspace = true }
 proc-macro = true
 
 [dependencies]
+proc-macro2 = { workspace = true }
 generic-array-struct-common = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true, features = ["printing", "parsing", "proc-macro"]}

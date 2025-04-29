@@ -3,26 +3,20 @@
 use std::iter::once;
 
 use generic_array_struct_common::{
-    idents::{array_len_ident, field_idx_ident},
+    idents::{array_len_ident, field_idx_ident, with_ident},
     utils::path_from_ident,
     GenericArrayStructParams,
 };
-use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input,
     punctuated::Punctuated,
     token::{Colon, Const},
-    AngleBracketedGenericArguments, ConstParam, DeriveInput, Expr, ExprLit, GenericArgument,
-    GenericParam, Generics, Ident, Lit, LitBool, Token, Type, TypeParam, TypePath,
+    AngleBracketedGenericArguments, ConstParam, Expr, ExprLit, GenericArgument, GenericParam,
+    Generics, Ident, Lit, LitBool, Token, Type, TypeParam, TypePath,
 };
 
-/// The main attribute proc macro. See crate docs for usage.
-#[proc_macro_derive(GenericArrayStructBuilder)]
-pub fn generic_array_struct_builder(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let params = GenericArrayStructParams(input);
-
+/// Outputs the token stream to append
+pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStream {
     let n_fields = params.fields_named().named.iter().count();
     let generic_id = params.generic_ident();
     let struct_id = params.struct_ident();
@@ -44,13 +38,14 @@ pub fn generic_array_struct_builder(input: TokenStream) -> TokenStream {
             let idx_id = field_idx_ident(struct_id, field_id);
             // TOOD: this might need to be a const-expr instead
             let cgid_i = cgid(i);
+            let with_id = with_ident(field_id);
 
             res.extend(quote! {
                 impl #params #builder_id #gen_args_false {
                     #[inline]
-                    pub fn with_x(
+                    pub fn #with_id(
                         mut self,
-                        val: T,
+                        val: #generic_id,
                     ) -> #builder_id #gen_args_true {
                         // use raw array indices instead of mut references to preserve const
                         self.0.0[#idx_id] = core::mem::MaybeUninit::new(val);
@@ -82,7 +77,7 @@ pub fn generic_array_struct_builder(input: TokenStream) -> TokenStream {
         #[repr(transparent)]
         pub struct #builder_id #all_gen_params (#struct_id <core::mem::MaybeUninit<#generic_id>>);
 
-        pub type #new_builder_id #just_param = #builder_id #all_false_gen_args;
+        pub type #new_builder_id<#just_param> = #builder_id #all_false_gen_args;
 
         impl<T> #new_builder_id <T> {
             const _UNINIT: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
@@ -100,7 +95,7 @@ pub fn generic_array_struct_builder(input: TokenStream) -> TokenStream {
         }
     });
 
-    res.into()
+    res
 }
 
 /// e.g.
