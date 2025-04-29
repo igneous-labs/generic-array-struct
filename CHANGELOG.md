@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `generic-array-struct-builder` crate
+- `builder` arg for generating a builder struct
 
 
 ## [0.3.0-bc] - 2025-03-24
