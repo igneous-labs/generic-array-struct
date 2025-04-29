@@ -53,6 +53,8 @@ impl RgbU8 {
     }
 }
 
+pub const BLACK: RgbU8 = NewRgbBuilder::start().with_b(0).with_g(0).with_r(0).build();
+
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;

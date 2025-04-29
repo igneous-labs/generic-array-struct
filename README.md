@@ -38,13 +38,13 @@ impl<T> Cartesian<T> {
     }
 
     #[inline]
-    pub fn x_mut(&mut self) -> &mut T {
+    pub const fn x_mut(&mut self) -> &mut T {
         &mut self.0[CARTESIAN_IDX_X]
     }
 
     /// Returns the old field value
     #[inline]
-    pub fn set_x(&mut self, val: T) -> T {
+    pub const fn set_x(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_X], val)
     }
 
@@ -61,13 +61,13 @@ impl<T> Cartesian<T> {
     }
 
     #[inline]
-    pub fn y_mut(&mut self) -> &mut T {
+    pub const fn y_mut(&mut self) -> &mut T {
         &mut self.0[CARTESIAN_IDX_Y]
     }
 
     /// Returns the old field value
     #[inline]
-    pub fn set_y(&mut self, val: T) -> T {
+    pub const fn set_y(&mut self, val: T) -> T {
         core::mem::replace(&mut self.0[CARTESIAN_IDX_Y], val)
     }
 
@@ -209,7 +209,7 @@ impl<T> NewCartesianBuilder<T> {
 
 impl<Z, const S1: bool> CartesianBuilder<Z, false, S1> {
     #[inline]
-    pub fn with_x(
+    pub const fn with_x(
         mut self,
         val: Z,
     ) -> CartesianBuilder<Z, true, S1> {
@@ -224,7 +224,7 @@ impl<Z, const S1: bool> CartesianBuilder<Z, false, S1> {
 
 impl<Z, const S0: bool> CartesianBuilder<Z, S0, false> {
     #[inline]
-    pub fn with_y(
+    pub const fn with_y(
         mut self,
         val: Z,
     ) -> CartesianBuilder<Z, S0, true> {
@@ -239,7 +239,7 @@ impl<Z, const S0: bool> CartesianBuilder<Z, S0, false> {
 
 impl<Z> CartesianBuilder<Z, true, true> {
     #[inline]
-    pub fn build(self) -> Cartesian<Z> {
+    pub const fn build(self) -> Cartesian<Z> {
         // if not `repr(transparent)`, must use `self.0` instead of `self`,
         // but we always enforce repr(transparent)
         unsafe {

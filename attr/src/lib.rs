@@ -170,13 +170,13 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                     }
 
                     #[inline]
-                    #field_vis fn #id_mut(&mut self) -> &mut T {
+                    #field_vis const fn #id_mut(&mut self) -> &mut T {
                         &mut self.0[#idx_ident]
                     }
 
                     /// Returns the old field value
                     #[inline]
-                    #field_vis fn #set_id(&mut self, val: T) -> T {
+                    #field_vis const fn #set_id(&mut self, val: T) -> T {
                         core::mem::replace(&mut self.0[#idx_ident], val)
                     }
 

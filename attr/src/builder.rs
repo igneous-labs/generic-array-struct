@@ -47,7 +47,7 @@ pub(crate) fn impl_builder(
             res.extend(quote! {
                 impl #params #builder_id #gen_args_false {
                     #[inline]
-                    #field_vis fn #with_id(
+                    #field_vis const fn #with_id(
                         mut self,
                         val: #generic_id,
                     ) -> #builder_id #gen_args_true {
@@ -102,7 +102,7 @@ pub(crate) fn impl_builder(
 
         impl<#just_param> #builder_id #all_true_gen_args {
             #[inline]
-            #struct_vis fn build(self) -> #struct_id<#generic_id> {
+            #struct_vis const fn build(self) -> #struct_id<#generic_id> {
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(self)

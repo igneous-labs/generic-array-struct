@@ -12,7 +12,7 @@ version = "0.3.1-bc"
 license-file = "LICENSE"
 description = "An attribute proc macro to convert structs with named fields of the same generic type into a single-array-field tuple struct with array-index-based accessor and mutator methods."
 repository = "https://github.com/igneous-labs/generic-array-struct"
-rust-version = "1.64"
+rust-version = "1.83"
 
 [workspace.dependencies]
 heck = { version = "^0.5", default-features = false }
