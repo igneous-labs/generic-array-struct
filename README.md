@@ -268,10 +268,48 @@ impl<Z, const S0: bool, const S1: bool> Drop for CartesianBuilder<Z, S0, S1> {
 }
 ```
 
-TODO: show example of stuff failing to compile because
-- attempted to set more than once
-- did not set all fields
+Example builder usages:
 
+```rust,compile_fail,E0599
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder)]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// y has not been set, this fails to compile with
+// `method not found in `CartesianBuilder<{integer}, true, false>`
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).build();
+```
+
+```rust,compile_fail,E0599
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder pub)]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// attempted to set x twice, this fails to compile with
+// `no method named `with_x` found for struct `CartesianBuilder<{integer}, true, true>` in the current scope`
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).with_x(2).build();
+```
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder pub(crate))]
+pub struct Cartesian<T> {
+    pub x: T,
+    pub y: T,
+}
+
+// proper initialization after setting all fields exactly once
+let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).build();
+```
 
 #### `.0` Visibility Attribute Arg
 

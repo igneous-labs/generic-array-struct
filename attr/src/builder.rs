@@ -67,7 +67,8 @@ pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStre
         });
 
     let new_builder_id = format_ident!("New{builder_id}");
-    let all_false_gen_args = generic_args_fill(generic_id, n_fields, false);
+    let [all_false_gen_args, all_true_gen_args] =
+        [false, true].map(|b| generic_args_fill(generic_id, n_fields, b));
     let just_param = ident_to_gen_param(generic_id.clone());
     let len_id = array_len_ident(struct_id);
     let all_gen_params = generic_params(generic_id, n_fields, None);
@@ -91,6 +92,17 @@ pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStre
         impl #all_gen_params Drop for #builder_id #all_gen_args {
             fn drop(&mut self) {
                 #drop_impl
+            }
+        }
+
+        impl<#just_param> #builder_id #all_true_gen_args {
+            #[inline]
+            pub fn build(self) -> #struct_id<#generic_id> {
+                unsafe {
+                    core::mem::transmute_copy::<_, _>(
+                        &core::mem::ManuallyDrop::new(self)
+                    )
+                }
             }
         }
     });
