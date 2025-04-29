@@ -93,6 +93,7 @@ pub fn impl_builder(
         }
 
         impl #all_gen_params Drop for #builder_id #all_gen_args {
+            #[inline]
             fn drop(&mut self) {
                 #drop_impl
             }
