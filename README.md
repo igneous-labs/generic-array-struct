@@ -163,7 +163,7 @@ The attribute can be further customized by the following space-separated positio
 
 #### Builder Arg
 
-An optional `builder` positionl arg controls whether to generate a builder struct that at compile-time ensures that every field is set exactly once.
+An optional `builder` positional arg controls whether to generate a builder struct that, at compile-time, ensures that every field is set exactly once before creating the struct.
 
 ```rust
 use generic_array_struct::generic_array_struct;
@@ -213,7 +213,6 @@ impl<Z, const S1: bool> CartesianBuilder<Z, false, S1> {
         mut self,
         val: Z,
     ) -> CartesianBuilder<Z, true, S1> {
-        // use raw array indices instead of mut references to preserve const
         self.0.0[CARTESIAN_IDX_X] = core::mem::MaybeUninit::new(val);
         unsafe {
             core::mem::transmute_copy::<_, _>(
@@ -268,7 +267,9 @@ impl<Z, const S0: bool, const S1: bool> Drop for CartesianBuilder<Z, S0, S1> {
 }
 ```
 
-Example builder usages:
+##### Example Builder Usages
+
+###### Attempting to build before setting all fields
 
 ```rust,compile_fail,E0599
 use generic_array_struct::generic_array_struct;
@@ -284,6 +285,8 @@ pub struct Cartesian<T> {
 let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).build();
 ```
 
+###### Attempting to set a field twice
+
 ```rust,compile_fail,E0599
 use generic_array_struct::generic_array_struct;
 
@@ -297,6 +300,8 @@ pub struct Cartesian<T> {
 // `no method named `with_x` found for struct `CartesianBuilder<{integer}, true, true>` in the current scope`
 let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).with_x(2).build();
 ```
+
+###### Proper initialization
 
 ```rust
 use generic_array_struct::generic_array_struct;
