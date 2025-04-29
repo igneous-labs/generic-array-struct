@@ -11,9 +11,8 @@ proc-macro = true
 
 [dependencies]
 generic-array-struct-common = { workspace = true }
-heck = { workspace = true }
 quote = { workspace = true }
-syn = { workspace = true }
+syn = { workspace = true, features = ["printing", "parsing", "proc-macro"]}
 
 [dev-dependencies]
 generic-array-struct = { workspace = true }

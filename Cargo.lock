@@ -17,7 +17,6 @@ version = "0.3.0-bc"
 dependencies = [
  "generic-array-struct",
  "generic-array-struct-common",
- "heck",
  "quote",
  "syn",
 ]

@@ -4,6 +4,8 @@ An attribute proc macro to create a builder struct of a [`generic-array-struct`]
 
 This crate must be used with structs that are `#[generic_array_struct]`.
 
+TODO: this seems kinda bad because this crate is now tightly coupled to `generic-array-struct`, wonder if there's a better way to structure this.
+
 ## Example Usage
 
 TODO: show example of stuff failing to compile because
@@ -12,14 +14,12 @@ TODO: show example of stuff failing to compile because
 
 ## Implementation
 
-```rust ignore
-// TODO: remove ignore
+```rust
 use generic_array_struct::generic_array_struct;
-use generic_array_struct_builder::generic_array_struct_builder;
+use generic_array_struct_builder::GenericArrayStructBuilder;
 
 #[generic_array_struct]
-#[generic_array_struct_builder]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, GenericArrayStructBuilder)]
 pub struct Cartesian<T> {
     /// x-coordinate
     pub x: T,
@@ -114,12 +114,12 @@ impl<T, const S0: bool, const S1: bool> Drop for CartesianBuilder<T, S0, S1> {
     fn drop(&mut self) {
         if S0 {
             unsafe {
-                self.0.x_mut().assume_init_drop();
+                self.0.0[CARTESIAN_IDX_X].assume_init_drop();
             }
         }
         if S1 {
             unsafe {
-                self.0.y_mut().assume_init_drop();
+                self.0.0[CARTESIAN_IDX_Y].assume_init_drop();
             } 
         }
     }

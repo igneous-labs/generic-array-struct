@@ -43,16 +43,16 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
     let input = parse_macro_input!(input as DeriveInput);
     let mut params = GenericArrayStructParams(input);
 
-    let (n_fields, fields_idx_consts, accessor_mutator_impls, const_with_impls) =
-        params.fields_named().named.iter().enumerate().fold(
-            (0usize, quote! {}, quote! {}, quote! {}),
-            |(
-                n_fields,
-                mut fields_idx_consts,
-                mut accessor_mutator_impls,
-                mut const_with_impls,
-            ),
-             (i, field)| {
+    let mut fields_idx_consts = quote! {};
+    let mut accessor_mutator_impls = quote! {};
+    let mut const_with_impls = quote! {};
+    let n_fields =
+        params
+            .fields_named()
+            .named
+            .iter()
+            .enumerate()
+            .fold(0usize, |n_fields, (i, field)| {
                 let expect_same_generic = match &field.ty {
                     Type::Path(g) => g,
                     _ => panic_req_all_fields_same_generic(),
@@ -117,14 +117,8 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                     }
                 });
 
-                (
-                    n_fields + 1,
-                    fields_idx_consts,
-                    accessor_mutator_impls,
-                    const_with_impls,
-                )
-            },
-        );
+                n_fields + 1
+            });
 
     let len_ident = array_len_ident(params.struct_ident());
 
