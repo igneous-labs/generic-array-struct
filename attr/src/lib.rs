@@ -161,7 +161,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
     };
 
     if should_gen_builder {
-        res.extend(impl_builder(&params));
+        res.extend(impl_builder(&params, struct_vis));
     }
 
     // finally, replace the struct defn with a single array field tuple struct

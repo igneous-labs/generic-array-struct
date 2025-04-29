@@ -12,11 +12,14 @@ use syn::{
     punctuated::Punctuated,
     token::{Colon, Const},
     AngleBracketedGenericArguments, ConstParam, Expr, ExprLit, GenericArgument, GenericParam,
-    Generics, Ident, Lit, LitBool, Token, Type, TypeParam, TypePath,
+    Generics, Ident, Lit, LitBool, Token, Type, TypeParam, TypePath, Visibility,
 };
 
 /// Outputs the token stream to append
-pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStream {
+pub fn impl_builder(
+    params: &GenericArrayStructParams,
+    struct_vis: &Visibility,
+) -> proc_macro2::TokenStream {
     let n_fields = params.fields_named().named.iter().count();
     let generic_id = params.generic_ident();
     let struct_id = params.struct_ident();
@@ -35,15 +38,15 @@ pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStre
                 [false, true].map(|hole| generic_args(generic_id, n_fields, Some((i, hole))));
             // unwrap-safety: named field checked above by params.fields_named()
             let field_id = field.ident.as_ref().unwrap();
+            let field_vis = &field.vis;
             let idx_id = field_idx_ident(struct_id, field_id);
-            // TOOD: this might need to be a const-expr instead
             let cgid_i = cgid(i);
             let with_id = with_ident(field_id);
 
             res.extend(quote! {
                 impl #params #builder_id #gen_args_false {
                     #[inline]
-                    pub fn #with_id(
+                    #field_vis fn #with_id(
                         mut self,
                         val: #generic_id,
                     ) -> #builder_id #gen_args_true {
@@ -76,15 +79,15 @@ pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStre
 
     res.extend(quote! {
         #[repr(transparent)]
-        pub struct #builder_id #all_gen_params (#struct_id <core::mem::MaybeUninit<#generic_id>>);
+        #struct_vis struct #builder_id #all_gen_params (#struct_id <core::mem::MaybeUninit<#generic_id>>);
 
-        pub type #new_builder_id<#just_param> = #builder_id #all_false_gen_args;
+        #struct_vis type #new_builder_id<#just_param> = #builder_id #all_false_gen_args;
 
         impl<T> #new_builder_id <T> {
             const _UNINIT: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
 
             #[inline]
-            pub const fn start() -> Self {
+            #struct_vis const fn start() -> Self {
                 Self(#struct_id([Self::_UNINIT; #len_id]))
             }
         }
@@ -97,7 +100,7 @@ pub fn impl_builder(params: &GenericArrayStructParams) -> proc_macro2::TokenStre
 
         impl<#just_param> #builder_id #all_true_gen_args {
             #[inline]
-            pub fn build(self) -> #struct_id<#generic_id> {
+            #struct_vis fn build(self) -> #struct_id<#generic_id> {
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(self)
