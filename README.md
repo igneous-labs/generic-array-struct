@@ -281,7 +281,7 @@ pub struct Cartesian<T> {
 }
 
 // y has not been set, this fails to compile with
-// `method not found in `CartesianBuilder<{integer}, true, false>`
+// "method not found in `CartesianBuilder<{integer}, true, false>`"
 let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).build();
 ```
 
@@ -297,7 +297,7 @@ pub struct Cartesian<T> {
 }
 
 // attempted to set x twice, this fails to compile with
-// `no method named `with_x` found for struct `CartesianBuilder<{integer}, true, true>` in the current scope`
+// "no method named `with_x` found for struct `CartesianBuilder<{integer}, true, true>` in the current scope"
 let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).with_x(2).build();
 ```
 
