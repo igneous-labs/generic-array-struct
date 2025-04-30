@@ -4,7 +4,7 @@ An attribute proc macro to convert structs with named fields of the same generic
 
 ## MSRV
 
-`rustc 1.64.0` (`const fn`, `workspace = true`)
+`rustc 1.83.0` (stabilization of [`core::mem::replace()`](`core::mem::replace()`) in `const`)
 
 ## Example Usage
 
