@@ -193,6 +193,9 @@ pub struct CartesianBuilder<Z, const S0: bool, const S1: bool>(Cartesian<core::m
 pub type NewCartesianBuilder<Z> = CartesianBuilder<Z, false, false>;
 
 impl<T> NewCartesianBuilder<T> {
+    // impl notes:
+    // need to specify as associated const instead of fn local const, otherwise errors with
+    // 'can't use generic parameters from outer item'
     const _UNINIT: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
 
     #[inline]
