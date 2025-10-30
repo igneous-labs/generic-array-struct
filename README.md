@@ -188,7 +188,7 @@ pub struct Cartesian<Z> {
 
 // The const generic booleans track which fields have been set
 #[repr(transparent)]
-pub struct CartesianBuilder<Z, const S0: bool, const S1: bool>(Cartesian<core::mem::MaybeUninit<Z>>);
+pub struct CartesianBuilder<Z, const S0: bool, const S1: bool>([core::mem::MaybeUninit<Z>; CARTESIAN_LEN]);
 
 pub type NewCartesianBuilder<Z> = CartesianBuilder<Z, false, false>;
 
@@ -200,7 +200,7 @@ impl<T> NewCartesianBuilder<T> {
 
     #[inline]
     pub const fn start() -> Self {
-        Self(Cartesian([Self::_UNINIT; CARTESIAN_LEN]))
+        Self([Self::_UNINIT; CARTESIAN_LEN])
     }
 }
 
@@ -216,7 +216,7 @@ impl<Z, const S1: bool> CartesianBuilder<Z, false, S1> {
         mut self,
         val: Z,
     ) -> CartesianBuilder<Z, true, S1> {
-        self.0.0[CARTESIAN_IDX_X] = core::mem::MaybeUninit::new(val);
+        self.0[CARTESIAN_IDX_X] = core::mem::MaybeUninit::new(val);
         unsafe {
             core::mem::transmute_copy::<_, _>(
                 &core::mem::ManuallyDrop::new(self)
@@ -231,7 +231,7 @@ impl<Z, const S0: bool> CartesianBuilder<Z, S0, false> {
         mut self,
         val: Z,
     ) -> CartesianBuilder<Z, S0, true> {
-        self.0.0[CARTESIAN_IDX_Y] = core::mem::MaybeUninit::new(val);
+        self.0[CARTESIAN_IDX_Y] = core::mem::MaybeUninit::new(val);
         unsafe {
             core::mem::transmute_copy::<_, _>(
                 &core::mem::ManuallyDrop::new(self)
@@ -246,8 +246,10 @@ impl<Z> CartesianBuilder<Z, true, true> {
         // if not `repr(transparent)`, must use `self.0` instead of `self`,
         // but we always enforce repr(transparent)
         unsafe {
-            core::mem::transmute_copy::<_, _>(
-                &core::mem::ManuallyDrop::new(self)
+            Cartesian(
+                core::mem::transmute_copy::<_, _>(
+                    &core::mem::ManuallyDrop::new(self)
+                )
             )
         }
     }
@@ -258,14 +260,21 @@ impl<Z, const S0: bool, const S1: bool> Drop for CartesianBuilder<Z, S0, S1> {
     fn drop(&mut self) {
         if S0 {
             unsafe {
-                self.0.0[CARTESIAN_IDX_X].assume_init_drop();
+                self.0[CARTESIAN_IDX_X].assume_init_drop();
             }
         }
         if S1 {
             unsafe {
-                self.0.0[CARTESIAN_IDX_Y].assume_init_drop();
+                self.0[CARTESIAN_IDX_Y].assume_init_drop();
             } 
         }
+    }
+}
+
+impl<Z, const S0: bool, const S1: bool> Clone for CartesianBuilder<Z, S0, S1> where Z: Copy {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self(self.0)
     }
 }
 ```

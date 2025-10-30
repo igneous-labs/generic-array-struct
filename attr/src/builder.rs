@@ -119,10 +119,9 @@ pub(crate) fn impl_builder(
                 Self(self.0)
             }
         }
-
-        // cannot impl Copy bec struct is Drop.
-        // have to bound `T: Copy` on main struct defn if we dont want to impl Drop
     });
+    // cannot impl Copy bec Builder is Drop.
+    // have to bound `T: Copy` on Builder struct defn if we dont want to impl Drop
 
     res
 }
