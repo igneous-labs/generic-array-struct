@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Changed
+
+- Inner repr or `Builder` structs so that they are `Clone`
+
 ### Fixed
 
 - incorrect MSRV specified in README
