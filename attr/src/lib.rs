@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use builder::impl_builder;
+use destr::impl_destr;
 use errs::{
     panic_only_works_with_structs, panic_only_works_with_structs_with_named_fields,
     panic_req_all_fields_same_generic, panic_req_single_generic,
@@ -18,8 +19,6 @@ use syn::{
     FieldsUnnamed, GenericParam, Ident, Type, TypeArray, TypePath, Visibility,
 };
 use utils::path_from_ident;
-
-use crate::destr::impl_destr;
 
 mod builder;
 mod destr;
