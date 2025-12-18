@@ -62,6 +62,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn consts_sc() {
+        [
+            [RGB_LEN, RgbU8::LEN],
+            [RGB_IDX_B, RgbU8::IDX_B],
+            [RGB_IDX_G, RgbU8::IDX_G],
+            [RGB_IDX_R, RgbU8::IDX_R],
+        ]
+        .into_iter()
+        .for_each(|[a, b]| assert_eq!(a, b));
+    }
+
+    #[test]
     fn assert_const_colors() {
         assert_eq!(RgbU8::white().0, [255, 255, 255]);
         assert_eq!(RgbU8::red().0, [255, 0, 0]);
