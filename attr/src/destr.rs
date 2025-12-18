@@ -55,7 +55,19 @@ pub(crate) fn impl_destr(
             }
         }
 
+        impl<T> From<#destr_id <T>> for #struct_id <T> {
+            #[inline]
+            fn from(d: #destr_id <T>) -> Self {
+                Self::from_destr(d)
+            }
+        }
 
+        impl<T> From<#struct_id <T>> for #destr_id <T> {
+            #[inline]
+            fn from(d: #struct_id <T>) -> Self {
+                d.into_destr()
+            }
+        }
     }
 }
 

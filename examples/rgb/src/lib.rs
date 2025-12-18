@@ -112,9 +112,15 @@ mod tests {
     #[test]
     fn destr_rt() {
         [Rgb::blue(), Rgb::green(), Rgb::red(), Rgb::white(), BLACK]
-            .iter()
+            .into_iter()
             .for_each(|c| {
-                assert_eq!(*c, Rgb::from_destr(c.into_destr()));
+                let dest = c.into_destr();
+                assert_eq!(dest, c.into());
+
+                let back = Rgb::from_destr(dest);
+                assert_eq!(back, dest.into());
+
+                assert_eq!(c, back);
             });
     }
 }
