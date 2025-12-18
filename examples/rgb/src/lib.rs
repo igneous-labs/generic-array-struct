@@ -3,18 +3,18 @@
 use generic_array_struct::generic_array_struct;
 
 /// A RGB color triple
-#[generic_array_struct(builder pub)]
+#[generic_array_struct(builder)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Rgb<T> {
     /// red
-    pub r: T,
+    r: T,
 
     /// green
-    pub g: T,
+    g: T,
 
     /// blue
-    pub b: T,
+    b: T,
 }
 
 pub type RgbU8 = Rgb<u8>;
@@ -77,8 +77,8 @@ mod tests {
             .with_b(vec![3])
             .build();
         eprintln!("{a:#?}");
-        // a gets dropped here. If Builder not mem::forgotten, double free will occur
-        // and segfault
+        // a gets dropped here. If Builder not mem::forgotten,
+        // double free will occur and segfault
     }
 
     #[test]
@@ -90,7 +90,16 @@ mod tests {
         // partially initialized a gets dropped here.
         // Make sure Builder `Drop` impl doesnt
         // attempt to drop uninitialized memory.
-        // If so, this will segfault for attempting to decrement nonexistent Rc.
+        // If so, this will segfault for attempting
+        // to decrement nonexistent Rc.
+    }
+
+    #[test]
+    fn clone_builder() {
+        let full_r = NewRgbBuilder::start().with_r(255u8);
+        let yellow = full_r.clone().with_g(255).with_b(0).build();
+        let purple = full_r.with_g(0).with_b(255).build();
+        eprintln!("{yellow:#?} {purple:#?}");
     }
 
     // TODO: need to find a (easy) way to test for memory leaks

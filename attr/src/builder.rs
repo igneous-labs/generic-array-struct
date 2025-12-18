@@ -52,7 +52,7 @@ pub(crate) fn impl_builder(
                         val: #generic_id,
                     ) -> #builder_id #gen_args_true {
                         // use raw array indices instead of mut references to preserve const
-                        self.0.0[#idx_id] = core::mem::MaybeUninit::new(val);
+                        self.0[#idx_id] = core::mem::MaybeUninit::new(val);
                         unsafe {
                             core::mem::transmute_copy::<_, _>(
                                 &core::mem::ManuallyDrop::new(self)
@@ -64,7 +64,7 @@ pub(crate) fn impl_builder(
             drop_impl.extend(quote! {
                 if #cgid_i {
                     unsafe {
-                        self.0.0[#idx_id].assume_init_drop();
+                        self.0[#idx_id].assume_init_drop();
                     }
                 }
             });
@@ -80,7 +80,7 @@ pub(crate) fn impl_builder(
 
     res.extend(quote! {
         #[repr(transparent)]
-        #struct_vis struct #builder_id #all_gen_params (#struct_id <core::mem::MaybeUninit<#generic_id>>);
+        #struct_vis struct #builder_id #all_gen_params ([core::mem::MaybeUninit<#generic_id>; #len_id]);
 
         #struct_vis type #new_builder_id<#just_param> = #builder_id #all_false_gen_args;
 
@@ -89,7 +89,20 @@ pub(crate) fn impl_builder(
 
             #[inline]
             #struct_vis const fn start() -> Self {
-                Self(#struct_id([Self::_UNINIT; #len_id]))
+                Self([Self::_UNINIT; #len_id])
+            }
+        }
+
+        impl<#just_param> #builder_id #all_true_gen_args {
+            #[inline]
+            #struct_vis const fn build(self) -> #struct_id<#generic_id> {
+                unsafe {
+                    #struct_id(
+                        core::mem::transmute_copy::<_, _>(
+                            &core::mem::ManuallyDrop::new(self)
+                        )
+                    )
+                }
             }
         }
 
@@ -100,17 +113,15 @@ pub(crate) fn impl_builder(
             }
         }
 
-        impl<#just_param> #builder_id #all_true_gen_args {
+        impl #all_gen_params Clone for #builder_id #all_gen_args where #generic_id: Copy {
             #[inline]
-            #struct_vis const fn build(self) -> #struct_id<#generic_id> {
-                unsafe {
-                    core::mem::transmute_copy::<_, _>(
-                        &core::mem::ManuallyDrop::new(self)
-                    )
-                }
+            fn clone(&self) -> Self {
+                Self(self.0)
             }
         }
     });
+    // cannot impl Copy bec Builder is Drop.
+    // have to bound `T: Copy` on Builder struct defn if we dont want to impl Drop
 
     res
 }
@@ -120,7 +131,7 @@ pub(crate) fn impl_builder(
 /// - `generic_args(T, 3, Some((1, true)))` generates:
 ///   `<T, S0, true, S2>`
 /// - `generic_args(T, 3, None)` generates:
-///    `<T, S0, S1, S2>`
+///   `<T, S0, S1, S2>`
 fn generic_args(
     generic_ident: &Ident,
     n_fields: usize,
