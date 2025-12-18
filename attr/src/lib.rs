@@ -14,12 +14,15 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
     token::{Bracket, Paren, Semi},
-    Data, DataStruct, DeriveInput, Expr, ExprPath, Field, Fields, FieldsNamed, FieldsUnnamed,
-    GenericParam, Ident, Type, TypeArray, TypePath, Visibility,
+    Attribute, Data, DataStruct, DeriveInput, Expr, ExprPath, Field, Fields, FieldsNamed,
+    FieldsUnnamed, GenericParam, Ident, Type, TypeArray, TypePath, Visibility,
 };
 use utils::path_from_ident;
 
+use crate::destr::impl_destr;
+
 mod builder;
+mod destr;
 mod errs;
 mod idents;
 mod utils;
@@ -77,30 +80,51 @@ impl GenericArrayStructParams {
             _ => panic_only_works_with_structs_with_named_fields(),
         }
     }
+
+    #[inline]
+    pub fn attrs(&self) -> &[Attribute] {
+        &self.0.attrs
+    }
 }
 
 struct AttrArgs {
     array_field_vis: Visibility,
     should_gen_builder: bool,
+    should_gen_destr: bool,
 }
 
 impl Parse for AttrArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let should_gen_builder = if input.peek(Ident) {
-            let id: Ident = input.parse()?;
-            if id != "builder" {
-                panic!("Expected token `builder`")
-            } else {
-                true
+        let [mut should_gen_builder, mut should_gen_destr] = [false; 2];
+
+        for _i in 0..2 {
+            if !input.peek(Ident) {
+                break;
             }
-        } else {
-            false
-        };
+            let id: Ident = input.parse()?;
+            // cant match here, ident is not str
+            if id == "builder" {
+                if should_gen_builder {
+                    panic!("`builder` already set");
+                } else {
+                    should_gen_builder = true;
+                }
+            } else if id == "destr" {
+                if should_gen_destr {
+                    panic!("`destr` already set");
+                } else {
+                    should_gen_destr = true;
+                }
+            } else {
+                panic!("Expected either `builder` or `destr` token")
+            }
+        }
 
         if input.is_empty() {
             return Ok(Self {
                 array_field_vis: Visibility::Inherited,
                 should_gen_builder,
+                should_gen_destr,
             });
         }
 
@@ -108,6 +132,7 @@ impl Parse for AttrArgs {
         Ok(Self {
             array_field_vis,
             should_gen_builder,
+            should_gen_destr,
         })
     }
 }
@@ -118,6 +143,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
     let AttrArgs {
         array_field_vis,
         should_gen_builder,
+        should_gen_destr,
     } = parse_macro_input!(attr_arg as AttrArgs);
 
     let input = parse_macro_input!(input as DeriveInput);
@@ -220,6 +246,10 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
 
     if should_gen_builder {
         res.extend(impl_builder(&params, struct_vis));
+    }
+
+    if should_gen_destr {
+        res.extend(impl_destr(&params, struct_vis));
     }
 
     // finally, replace the struct defn with a single array field tuple struct

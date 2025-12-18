@@ -196,42 +196,42 @@ pub struct CartesianDestr<Z> {
     pub y: Z,
 }
 
-impl<Z> Cartesian<Z> {
+impl<T> Cartesian<T> {
     #[inline]
-    pub fn from_destr(CartesianDestr { x, y }: CartesianDestr<Z>) -> Self {
-        Self([x, y])
+    pub fn from_destr(CartesianDestr { x, y, }: CartesianDestr<T>) -> Self {
+        Self([x, y,])
     }
 
     #[inline]
-    pub fn into_destr(self) -> CartesianDestr<Z> {
-        let Self([x, y]) = self;
-        CartesianDestr { x, y }
-    }
-}
-
-impl<Z: Copy> Cartesian<Z> {
-    #[inline]
-    pub const fn const_from_destr(CartesianDestr { x, y }: CartesianDestr<Z>) -> Self {
-        Self([x, y])
-    }
-
-    #[inline]
-    pub const fn const_into_destr(self) -> CartesianDestr<Z> {
-        let Self([x, y]) = self;
-        CartesianDestr { x, y }
+    pub fn into_destr(self) -> CartesianDestr<T> {
+        let Self([x, y,]) = self;
+        CartesianDestr { x, y, }
     }
 }
 
-impl<Z> From<CartesianDestr<Z>> for Cartesian<Z> {
+impl<T: Copy> Cartesian<T> {
     #[inline]
-    fn from(d: CartesianDestr<Z>) -> Self {
+    pub const fn const_from_destr(CartesianDestr { x, y, }: CartesianDestr<T>) -> Self {
+        Self([x, y,])
+    }
+
+    #[inline]
+    pub const fn const_into_destr(self) -> CartesianDestr<T> {
+        let Self([x, y,]) = self;
+        CartesianDestr { x, y, }
+    }
+}
+
+impl<T> From<CartesianDestr<T>> for Cartesian<T> {
+    #[inline]
+    fn from(d: CartesianDestr<T>) -> Self {
         Self::from_destr(d)
     }
 }
 
-impl<Z> From<Cartesian<Z>> for CartesianDestr<Z> {
+impl<T> From<Cartesian<T>> for CartesianDestr<T> {
     #[inline]
-    fn from(d: Cartesian<Z>) -> Self {
+    fn from(d: Cartesian<T>) -> Self {
         d.into_destr()
     }
 }
