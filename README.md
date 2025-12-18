@@ -414,7 +414,7 @@ let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).build()
 
 #### `.0` Visibility Attribute Arg
 
-The attribute's second position arg is a [`syn::Visibility`](`syn::Visibility`) that controls the visibility of the resulting `.0` array field. 
+The attribute's final position arg is a [`syn::Visibility`](`syn::Visibility`) that controls the visibility of the resulting `.0` array field. 
 
 ```rust
 use generic_array_struct::generic_array_struct;
