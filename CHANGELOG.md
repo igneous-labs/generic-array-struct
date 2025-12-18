@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Added
+
+- `destr` arg for generating the original struct for destructuring
+
 ### Changed
 
 - Inner repr or `Builder` structs so that they are `Clone`
