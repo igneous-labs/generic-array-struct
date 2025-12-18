@@ -20,6 +20,8 @@ use syn::{
 };
 use utils::path_from_ident;
 
+use crate::idents::assoc_field_idx_ident;
+
 mod builder;
 mod destr;
 mod errs;
@@ -149,6 +151,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
     let mut params = GenericArrayStructParams(input);
 
     let mut fields_idx_consts = quote! {};
+    let mut fields_idx_assoc_consts = quote! {};
     let mut accessor_mutator_impls = quote! {};
     let mut const_with_impls = quote! {};
     let n_fields =
@@ -179,6 +182,13 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
                 let idx_ident = field_idx_ident(params.struct_ident(), field_ident);
                 fields_idx_consts.extend(quote! {
                     #field_vis const #idx_ident: usize = #i;
+                });
+
+                // associated consts
+                // pub const IDX_R: usize = 0;
+                let assoc_idx_ident = assoc_field_idx_ident(field_ident);
+                fields_idx_assoc_consts.extend(quote! {
+                    #field_vis const #assoc_idx_ident: usize = #i;
                 });
 
                 // fn r(), r_mut(), set_r(), with_r()
@@ -238,6 +248,12 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
 
         impl<T: Copy> #struct_ident<T> {
             #const_with_impls
+        }
+
+        impl<T> #struct_ident<T> {
+            #struct_vis const LEN: usize = #n_fields;
+
+            #fields_idx_assoc_consts
         }
 
         #fields_idx_consts

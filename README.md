@@ -92,7 +92,15 @@ impl<T: Copy> Cartesian<T> {
     }
 }
 
-// consts are exported with prefix instead of as associated consts
+
+impl<T> Cartesian<T> {
+    pub const LEN: usize = 2;
+
+    pub const IDX_X: usize = 0;
+    pub const IDX_Y: usize = 1;
+}
+
+// consts are also exported with prefix (not just as associated consts)
 // so that we dont need turbofish e.g. `Cartesian::<f32>::IDX_X`
 
 pub const CARTESIAN_LEN: usize = 2;

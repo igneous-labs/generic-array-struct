@@ -41,3 +41,9 @@ pub(crate) fn field_idx_ident(struct_ident: &Ident, field_ident: &Ident) -> Iden
         field_ident.to_string().to_shouty_snake_case()
     )
 }
+
+/// e.g. IDX_R
+#[inline]
+pub(crate) fn assoc_field_idx_ident(field_ident: &Ident) -> Ident {
+    format_ident!("IDX_{}", field_ident.to_string().to_shouty_snake_case())
+}
