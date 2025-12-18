@@ -161,9 +161,85 @@ const ONE_COMMA_ZERO: Cartesian<f64> = Cartesian([0.0; 2]).const_with_x(1.0);
 
 The attribute can be further customized by the following space-separated positional args.
 
-#### Builder Arg
+#### `destr` Arg
 
-An optional `builder` positional arg controls whether to generate a builder struct that, at compile-time, ensures that every field is set exactly once before creating the struct.
+An optional `destr` prefix arg controls whether to output the original struct definition as a separate struct for destructuring.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(destr pub)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+expands to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(pub)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CartesianDestr<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+impl<T> Cartesian<T> {
+    #[inline]
+    pub fn from_destr(CartesianDestr { x, y, }: CartesianDestr<T>) -> Self {
+        Self([x, y,])
+    }
+
+    #[inline]
+    pub fn into_destr(self) -> CartesianDestr<T> {
+        let Self([x, y,]) = self;
+        CartesianDestr { x, y, }
+    }
+}
+
+impl<T: Copy> Cartesian<T> {
+    #[inline]
+    pub const fn const_from_destr(CartesianDestr { x, y, }: CartesianDestr<T>) -> Self {
+        Self([x, y,])
+    }
+
+    #[inline]
+    pub const fn const_into_destr(self) -> CartesianDestr<T> {
+        let Self([x, y,]) = self;
+        CartesianDestr { x, y, }
+    }
+}
+
+impl<T> From<CartesianDestr<T>> for Cartesian<T> {
+    #[inline]
+    fn from(d: CartesianDestr<T>) -> Self {
+        Self::from_destr(d)
+    }
+}
+
+impl<T> From<Cartesian<T>> for CartesianDestr<T> {
+    #[inline]
+    fn from(d: Cartesian<T>) -> Self {
+        d.into_destr()
+    }
+}
+```
+
+#### `builder` Arg
+
+An optional `builder` prefix arg controls whether to generate a builder struct that, at compile-time, ensures that every field is set exactly once before creating the struct.
 
 ```rust
 use generic_array_struct::generic_array_struct;

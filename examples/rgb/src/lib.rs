@@ -3,7 +3,7 @@
 use generic_array_struct::generic_array_struct;
 
 /// A RGB color triple
-#[generic_array_struct(builder)]
+#[generic_array_struct(destr builder pub)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Rgb<T> {
@@ -103,4 +103,24 @@ mod tests {
     }
 
     // TODO: need to find a (easy) way to test for memory leaks
+
+    #[test]
+    fn destr_debug() {
+        eprintln!("{:#?}", BLACK.const_into_destr());
+    }
+
+    #[test]
+    fn destr_rt() {
+        [Rgb::blue(), Rgb::green(), Rgb::red(), Rgb::white(), BLACK]
+            .into_iter()
+            .for_each(|c| {
+                let dest = c.into_destr();
+                assert_eq!(dest, c.into());
+
+                let back = Rgb::from_destr(dest);
+                assert_eq!(back, dest.into());
+
+                assert_eq!(c, back);
+            });
+    }
 }
