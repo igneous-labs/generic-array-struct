@@ -135,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn mem_safety_try_map() {
+    fn mem_safety_try_map_fail() {
         const FAIL: u8 = 67;
         const SRC: Rgb<u8> = Rgb([0, FAIL, 0]);
 
@@ -150,6 +150,20 @@ mod tests {
 
         // if the initialized [0] MaybeUninit in try_map_*
         // isn't cleaned up properly then miri will detect a mem leak for the vecs
+    }
+
+    #[test]
+    fn mem_safety_try_map_success() {
+        let r = Rc::new(1);
+        let src = Rgb(core::array::from_fn(|_| r.clone()));
+
+        let id_clone_opt = |x: Rc<u8>| Some(x.clone());
+        let id_clone_res = |x: Rc<u8>| Ok::<_, ()>(x.clone());
+
+        assert_eq!(src.clone().try_map_opt(id_clone_opt).unwrap(), src);
+        assert_eq!(src.clone().try_map_res(id_clone_res).unwrap(), src);
+
+        // idk, just using Rc here to check for any weirdness
     }
 
     #[test]
