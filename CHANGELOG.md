@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `destr` arg for generating the original struct for destructuring
+- `trymap` arg for generating `try_map_opt` and `try_map_res` methods
 - Also export LEN and IDX consts as associated consts
 
 ### Changed

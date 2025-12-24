@@ -114,8 +114,6 @@ mod tests {
         eprintln!("{yellow:#?} {purple:#?}");
     }
 
-    // TODO: need to find a (easy) way to test for memory leaks
-
     #[test]
     fn destr_debug() {
         eprintln!("{:#?}", BLACK.const_into_destr());
@@ -126,13 +124,13 @@ mod tests {
         [Rgb::blue(), Rgb::green(), Rgb::red(), Rgb::white(), BLACK]
             .into_iter()
             .for_each(|c| {
-                let dest = c.into_destr();
-                assert_eq!(dest, c.into());
+                let destr = c.into_destr();
+                assert_eq!(destr, c.into());
 
-                let back = Rgb::from_destr(dest);
-                assert_eq!(back, dest.into());
+                let roundtripped = Rgb::from_destr(destr);
+                assert_eq!(roundtripped, destr.into());
 
-                assert_eq!(c, back);
+                assert_eq!(c, roundtripped);
             });
     }
 }
