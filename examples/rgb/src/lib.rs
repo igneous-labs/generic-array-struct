@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn mem_safety_try_map() {
         const FAIL: u8 = 67;
-        const SRC: Rgb<u8> = Rgb([0, 67, 0]);
+        const SRC: Rgb<u8> = Rgb([0, FAIL, 0]);
 
         let none_on_g = |x: u8| (x != FAIL).then_some(vec![x]);
         let err_on_g = |x: u8| none_on_g(x).ok_or(x);
