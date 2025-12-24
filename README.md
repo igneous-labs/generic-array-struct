@@ -442,6 +442,8 @@ pub struct Cartesian<Z> {
 //   Hopefully rustc is able to optimize away all the 
 //   transmute_copy() + core::mem::forget()s and use the same memory.
 //   I cannot wait for array transmutes to be stabilized.
+// - generate 2 separate methods instead of using `Try` trait so that its compatible
+//   with stable rust
 
 impl<T> Cartesian<T> {
     #[inline]
