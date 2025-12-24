@@ -3,7 +3,7 @@
 use generic_array_struct::generic_array_struct;
 
 /// A RGB color triple
-#[generic_array_struct(destr builder pub)]
+#[generic_array_struct(destr builder trymap pub)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Rgb<T> {
@@ -114,8 +114,6 @@ mod tests {
         eprintln!("{yellow:#?} {purple:#?}");
     }
 
-    // TODO: need to find a (easy) way to test for memory leaks
-
     #[test]
     fn destr_debug() {
         eprintln!("{:#?}", BLACK.const_into_destr());
@@ -126,13 +124,56 @@ mod tests {
         [Rgb::blue(), Rgb::green(), Rgb::red(), Rgb::white(), BLACK]
             .into_iter()
             .for_each(|c| {
-                let dest = c.into_destr();
-                assert_eq!(dest, c.into());
+                let destr = c.into_destr();
+                assert_eq!(destr, c.into());
 
-                let back = Rgb::from_destr(dest);
-                assert_eq!(back, dest.into());
+                let roundtripped = Rgb::from_destr(destr);
+                assert_eq!(roundtripped, destr.into());
 
-                assert_eq!(c, back);
+                assert_eq!(c, roundtripped);
             });
+    }
+
+    #[test]
+    fn mem_safety_try_map_fail() {
+        const FAIL: u8 = 67;
+        const SRC: Rgb<u8> = Rgb([0, FAIL, 0]);
+
+        let none_on_g = |x: u8| (x != FAIL).then_some(vec![x]);
+        let err_on_g = |x: u8| none_on_g(x).ok_or(x);
+
+        let opt = SRC.try_map_opt(none_on_g);
+        assert_eq!(opt, None);
+
+        let res = SRC.try_map_res(err_on_g);
+        assert_eq!(res, Err(FAIL));
+
+        // if the initialized [0] MaybeUninit in try_map_*
+        // isn't cleaned up properly then miri will detect a mem leak for the vecs
+    }
+
+    #[test]
+    fn mem_safety_try_map_success() {
+        let r = Rc::new(1);
+        let src = Rgb(core::array::from_fn(|_| r.clone()));
+
+        let id_clone_opt = |x: Rc<u8>| Some(x.clone());
+        let id_clone_res = |x: Rc<u8>| Ok::<_, ()>(x.clone());
+
+        assert_eq!(src.clone().try_map_opt(id_clone_opt).unwrap(), src);
+        assert_eq!(src.clone().try_map_res(id_clone_res).unwrap(), src);
+
+        // idk, just using Rc here to check for any weirdness
+    }
+
+    #[test]
+    fn try_map_basic() {
+        const SRC: Rgb<u8> = Rgb([1, 2, 3]);
+
+        let f_opt_id = |x: u8| Some(x);
+        let f_res_id = |x: u8| Ok::<_, ()>(x);
+
+        assert_eq!(SRC.try_map_opt(f_opt_id).unwrap(), SRC);
+        assert_eq!(SRC.try_map_res(f_res_id).unwrap(), SRC);
     }
 }

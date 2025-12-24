@@ -289,7 +289,7 @@ impl<T> NewCartesianBuilder<T> {
 }
 
 // impl notes:
-// - cannot use transmute() due to generic, cannot move out of struct due to Drop.
+// - cannot use transmute() due to const generic, cannot move out of struct due to Drop.
 //   Hopefully rustc is able to optimize away all the 
 //   transmute_copy() + core::mem::forget()s and use the same memory.
 //   I cannot wait for array transmutes to be stabilized.
@@ -410,6 +410,102 @@ pub struct Cartesian<T> {
 
 // proper initialization after setting all fields exactly once
 let pt: Cartesian<u8> = NewCartesianBuilder::start().with_x(1).with_y(0).build();
+```
+
+#### `trymap` Arg
+
+An optional `trymap` prefix arg controls whether to generate 2 util methods, `try_map_opt` and `try_map_res` for the struct.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(trymap)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+expands to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+// impl notes:
+// - cannot use transmute() due to const generic, cannot move out of struct due to Drop.
+//   Hopefully rustc is able to optimize away all the 
+//   transmute_copy() + core::mem::forget()s and use the same memory.
+//   I cannot wait for array transmutes to be stabilized.
+// - generate 2 separate methods instead of using `Try` trait so that its compatible
+//   with stable rust
+
+impl<T> Cartesian<T> {
+    #[inline]
+    pub fn try_map_opt<B, F>(
+        self,
+        mut f: F,
+    ) -> Option<Cartesian<B>> where F: FnMut(T) -> Option<B> {
+        let mut res: Cartesian<core::mem::MaybeUninit<B>>
+            = Cartesian(core::array::from_fn(|_| core::mem::MaybeUninit::uninit()));
+        let written = self.0.into_iter().zip(res.0.iter_mut()).try_fold(
+            0usize,
+            |written, (val, rmut)| {
+                rmut.write(f(val).ok_or(written)?);
+                Ok(written + 1)
+            }
+        );
+        if let Err(written) = written {
+            res.0.iter_mut().take(written).for_each(
+                |mu| unsafe { mu.assume_init_drop() }
+            );
+            None
+        } else {
+            Some(Cartesian(
+                unsafe {
+                    core::mem::transmute_copy::<_, _>(
+                        &core::mem::ManuallyDrop::new(res.0)
+                    )
+                }
+            ))
+        }
+    }
+
+    #[inline]
+    pub fn try_map_res<B, E, F>(
+        self,
+        mut f: F,
+    ) -> Result<Cartesian<B>, E> where F: FnMut(T) -> Result<B, E> {
+        let mut res: Cartesian<core::mem::MaybeUninit<B>>
+            = Cartesian(core::array::from_fn(|_| core::mem::MaybeUninit::uninit()));
+        let written = self.0.into_iter().zip(res.0.iter_mut()).try_fold(
+            0usize,
+            |written, (val, rmut)| {
+                rmut.write(f(val).map_err(|e| (e, written))?);
+                Ok(written + 1)
+            }
+        );
+        if let Err((e, written)) = written {
+            res.0.iter_mut().take(written).for_each(
+                |mu| unsafe { mu.assume_init_drop() }
+            );
+            Err(e)
+        } else {
+            Ok(Cartesian(
+                unsafe {
+                    core::mem::transmute_copy::<_, _>(
+                        &core::mem::ManuallyDrop::new(res.0)
+                    )
+                }
+            ))
+        }
+    }
+}
 ```
 
 #### `.0` Visibility Attribute Arg

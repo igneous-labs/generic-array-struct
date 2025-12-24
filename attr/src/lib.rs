@@ -20,12 +20,13 @@ use syn::{
 };
 use utils::path_from_ident;
 
-use crate::idents::assoc_field_idx_ident;
+use crate::{idents::assoc_field_idx_ident, trymap::impl_trymap};
 
 mod builder;
 mod destr;
 mod errs;
 mod idents;
+mod trymap;
 mod utils;
 
 const MACRO_NAME: &str = "generic_array_struct";
@@ -92,13 +93,16 @@ struct AttrArgs {
     array_field_vis: Visibility,
     should_gen_builder: bool,
     should_gen_destr: bool,
+    should_gen_trymap: bool,
 }
 
 impl Parse for AttrArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let [mut should_gen_builder, mut should_gen_destr] = [false; 2];
+        let flags = [false; _];
+        let len = flags.len();
+        let [mut should_gen_builder, mut should_gen_destr, mut should_gen_trymap] = flags;
 
-        for _i in 0..2 {
+        for _i in 0..len {
             if !input.peek(Ident) {
                 break;
             }
@@ -116,8 +120,14 @@ impl Parse for AttrArgs {
                 } else {
                     should_gen_destr = true;
                 }
+            } else if id == "trymap" {
+                if should_gen_trymap {
+                    panic!("`trymap` already set");
+                } else {
+                    should_gen_trymap = true;
+                }
             } else {
-                panic!("Expected either `builder` or `destr` token")
+                panic!("Expected one of [`builder`, `destr`, `trymap`]")
             }
         }
 
@@ -126,6 +136,7 @@ impl Parse for AttrArgs {
                 array_field_vis: Visibility::Inherited,
                 should_gen_builder,
                 should_gen_destr,
+                should_gen_trymap,
             });
         }
 
@@ -134,6 +145,7 @@ impl Parse for AttrArgs {
             array_field_vis,
             should_gen_builder,
             should_gen_destr,
+            should_gen_trymap,
         })
     }
 }
@@ -145,6 +157,7 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
         array_field_vis,
         should_gen_builder,
         should_gen_destr,
+        should_gen_trymap,
     } = parse_macro_input!(attr_arg as AttrArgs);
 
     let input = parse_macro_input!(input as DeriveInput);
@@ -265,6 +278,10 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
 
     if should_gen_destr {
         res.extend(impl_destr(&params, struct_vis));
+    }
+
+    if should_gen_trymap {
+        res.extend(impl_trymap(&params));
     }
 
     // finally, replace the struct defn with a single array field tuple struct
