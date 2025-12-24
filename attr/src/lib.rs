@@ -98,9 +98,11 @@ struct AttrArgs {
 
 impl Parse for AttrArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let [mut should_gen_builder, mut should_gen_destr, mut should_gen_trymap] = [false; _];
+        let flags = [false; _];
+        let len = flags.len();
+        let [mut should_gen_builder, mut should_gen_destr, mut should_gen_trymap] = flags;
 
-        for _i in 0..2 {
+        for _i in 0..len {
             if !input.peek(Ident) {
                 break;
             }

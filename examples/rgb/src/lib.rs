@@ -3,7 +3,7 @@
 use generic_array_struct::generic_array_struct;
 
 /// A RGB color triple
-#[generic_array_struct(destr builder pub)]
+#[generic_array_struct(destr builder trymap pub)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Rgb<T> {
@@ -132,5 +132,34 @@ mod tests {
 
                 assert_eq!(c, roundtripped);
             });
+    }
+
+    #[test]
+    fn mem_safety_try_map() {
+        const FAIL: u8 = 67;
+        const SRC: Rgb<u8> = Rgb([0, 67, 0]);
+
+        let none_on_g = |x: u8| (x != FAIL).then_some(vec![x]);
+        let err_on_g = |x: u8| none_on_g(x).ok_or(x);
+
+        let opt = SRC.try_map_opt(none_on_g);
+        assert_eq!(opt, None);
+
+        let res = SRC.try_map_res(err_on_g);
+        assert_eq!(res, Err(FAIL));
+
+        // if the initialized [0] MaybeUninit in try_map_*
+        // isn't cleaned up properly then miri will detect a mem leak for the vecs
+    }
+
+    #[test]
+    fn try_map_basic() {
+        const SRC: Rgb<u8> = Rgb([1, 2, 3]);
+
+        let f_opt_id = |x: u8| Some(x);
+        let f_res_id = |x: u8| Ok::<_, ()>(x);
+
+        assert_eq!(SRC.try_map_opt(f_opt_id).unwrap(), SRC);
+        assert_eq!(SRC.try_map_res(f_res_id).unwrap(), SRC);
     }
 }
