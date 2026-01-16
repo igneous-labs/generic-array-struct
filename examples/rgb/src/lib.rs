@@ -153,6 +153,26 @@ mod tests {
     }
 
     #[test]
+    fn mem_safety_try_map_fail_2() {
+        const FAIL: u8 = 67;
+
+        let src = Rgb([vec![0], vec![FAIL], vec![0]]);
+
+        let none_on_g = |x: Vec<u8>| (x[0] != FAIL).then_some(x);
+        let err_on_g = |x: Vec<u8>| none_on_g(x).ok_or(());
+
+        let opt = src.clone().try_map_opt(none_on_g);
+        assert_eq!(opt, None);
+
+        let res = src.try_map_res(err_on_g);
+        assert_eq!(res, Err(()));
+
+        // if the vecs in src aren't cleaned up properly
+        // then there will be a double free when dropping both src
+        // and the MaybeUninits in try_map_*
+    }
+
+    #[test]
     fn mem_safety_try_map_success() {
         let r = Rc::new(1);
         let src = Rgb(core::array::from_fn(|_| r.clone()));
