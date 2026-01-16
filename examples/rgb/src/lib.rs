@@ -201,16 +201,19 @@ mod tests {
     fn zip_basic() {
         const T: Rgb<u8> = Rgb([0, 1, 2]);
         const U: Rgb<f64> = Rgb([0.0, 1.0, 2.0]);
+        const TU: Rgb<(u8, f64)> = T.const_zip(U);
+        const TU_UNZ: (Rgb<u8>, Rgb<f64>) = TU.const_unzip();
+
         let v: Rgb<Vec<u8>> = Rgb([vec![0], vec![1], vec![2]]);
 
-        assert_eq!(
-            T.const_zip(U),
-            Rgb(core::array::from_fn(|i| (i as u8, i as f64)))
-        );
-        assert_eq!(T.const_zip(U), T.zip(U));
+        assert_eq!(TU, Rgb(core::array::from_fn(|i| (i as u8, i as f64))));
+        assert_eq!(TU, T.zip(U));
         assert_eq!(
             T.zip(v),
             Rgb(core::array::from_fn(|i| (i as u8, vec![i as u8])))
         );
+
+        assert_eq!(TU_UNZ, (T, U));
+        assert_eq!(TU_UNZ, TU.unzip());
     }
 }

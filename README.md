@@ -550,6 +550,22 @@ impl<T: Copy> Cartesian<T> {
         Cartesian([(t0, u0), (t1, u1)])
     }
 }
+
+impl<T, U> Cartesian<(T, U)> {
+    #[inline]
+    pub fn unzip(self) -> (Cartesian<T>, Cartesian<U>) {
+        let Self([(t0, u0), (t1, u1)]) = self;
+        (Cartesian([t0, t1]), Cartesian([u0, u1]))
+    }
+}
+
+impl<T: Copy, U: Copy> Cartesian<(T, U)> {
+    #[inline]
+    pub const fn const_unzip(self) -> (Cartesian<T>, Cartesian<U>) {
+        let Self([(t0, u0), (t1, u1)]) = self;
+        (Cartesian([t0, t1]), Cartesian([u0, u1]))
+    }
+}
 ```
 
 #### `all` Arg
