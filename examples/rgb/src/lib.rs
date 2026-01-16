@@ -3,7 +3,7 @@
 use generic_array_struct::generic_array_struct;
 
 /// A RGB color triple
-#[generic_array_struct(destr builder trymap pub)]
+#[generic_array_struct(all pub)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Rgb<T> {
@@ -195,5 +195,22 @@ mod tests {
 
         assert_eq!(SRC.try_map_opt(f_opt_id).unwrap(), SRC);
         assert_eq!(SRC.try_map_res(f_res_id).unwrap(), SRC);
+    }
+
+    #[test]
+    fn zip_basic() {
+        const T: Rgb<u8> = Rgb([0, 1, 2]);
+        const U: Rgb<f64> = Rgb([0.0, 1.0, 2.0]);
+        let v: Rgb<Vec<u8>> = Rgb([vec![0], vec![1], vec![2]]);
+
+        assert_eq!(
+            T.const_zip(U),
+            Rgb(core::array::from_fn(|i| (i as u8, i as f64)))
+        );
+        assert_eq!(T.const_zip(U), T.zip(U));
+        assert_eq!(
+            T.zip(v),
+            Rgb(core::array::from_fn(|i| (i as u8, vec![i as u8])))
+        );
     }
 }

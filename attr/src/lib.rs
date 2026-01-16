@@ -134,6 +134,7 @@ impl Parse for AttrArgs {
                 if i != 0 {
                     panic!("`all` must not be used with other args");
                 }
+
                 *builder = true;
                 *destr = true;
                 *trymap = true;
