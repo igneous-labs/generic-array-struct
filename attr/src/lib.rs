@@ -20,7 +20,7 @@ use syn::{
 };
 use utils::path_from_ident;
 
-use crate::{idents::assoc_field_idx_ident, trymap::impl_trymap};
+use crate::{idents::assoc_field_idx_ident, trymap::impl_trymap, zip::impl_zip};
 
 mod builder;
 mod destr;
@@ -28,6 +28,7 @@ mod errs;
 mod idents;
 mod trymap;
 mod utils;
+mod zip;
 
 const MACRO_NAME: &str = "generic_array_struct";
 
@@ -91,61 +92,79 @@ impl GenericArrayStructParams {
 
 struct AttrArgs {
     array_field_vis: Visibility,
-    should_gen_builder: bool,
-    should_gen_destr: bool,
-    should_gen_trymap: bool,
+    flags: Flags,
+}
+
+// be pretty funny if this was a #[generic_array_struct]
+#[derive(Default)]
+struct Flags {
+    builder: bool,
+    destr: bool,
+    trymap: bool,
+    zip: bool,
+}
+
+const FLAGS_LEN: usize = core::mem::size_of::<Flags>();
+
+fn set_flag_checked(r: &mut bool, name: &'static str) {
+    if *r {
+        panic!("`{name}` already set");
+    }
+    *r = true;
 }
 
 impl Parse for AttrArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let flags = [false; _];
-        let len = flags.len();
-        let [mut should_gen_builder, mut should_gen_destr, mut should_gen_trymap] = flags;
+        let mut flags = Flags::default();
+        let Flags {
+            builder,
+            destr,
+            trymap,
+            zip,
+        } = &mut flags;
 
-        for _i in 0..len {
+        for i in 0..FLAGS_LEN {
             if !input.peek(Ident) {
                 break;
             }
+
             let id: Ident = input.parse()?;
             // cant match here, ident is not str
-            if id == "builder" {
-                if should_gen_builder {
-                    panic!("`builder` already set");
-                } else {
-                    should_gen_builder = true;
+            if id == "all" {
+                if i != 0 {
+                    panic!("`all` must not be used with other args");
                 }
+
+                *builder = true;
+                *destr = true;
+                *trymap = true;
+                *zip = true;
+
+                break;
+            } else if id == "builder" {
+                set_flag_checked(builder, "builder");
             } else if id == "destr" {
-                if should_gen_destr {
-                    panic!("`destr` already set");
-                } else {
-                    should_gen_destr = true;
-                }
+                set_flag_checked(destr, "destr");
             } else if id == "trymap" {
-                if should_gen_trymap {
-                    panic!("`trymap` already set");
-                } else {
-                    should_gen_trymap = true;
-                }
+                set_flag_checked(trymap, "trymap");
+            } else if id == "zip" {
+                set_flag_checked(zip, "zip");
             } else {
-                panic!("Expected one of [`builder`, `destr`, `trymap`]")
+                panic!("Expected one of [`all`, `builder`, `destr`, `trymap`, `zip`]")
             }
         }
 
         if input.is_empty() {
             return Ok(Self {
                 array_field_vis: Visibility::Inherited,
-                should_gen_builder,
-                should_gen_destr,
-                should_gen_trymap,
+                flags,
             });
         }
 
         let array_field_vis = input.parse()?;
         Ok(Self {
             array_field_vis,
-            should_gen_builder,
-            should_gen_destr,
-            should_gen_trymap,
+            flags,
         })
     }
 }
@@ -155,9 +174,13 @@ impl Parse for AttrArgs {
 pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenStream {
     let AttrArgs {
         array_field_vis,
-        should_gen_builder,
-        should_gen_destr,
-        should_gen_trymap,
+        flags:
+            Flags {
+                builder,
+                destr,
+                trymap,
+                zip,
+            },
     } = parse_macro_input!(attr_arg as AttrArgs);
 
     let input = parse_macro_input!(input as DeriveInput);
@@ -272,16 +295,20 @@ pub fn generic_array_struct(attr_arg: TokenStream, input: TokenStream) -> TokenS
         #fields_idx_consts
     };
 
-    if should_gen_builder {
+    if builder {
         res.extend(impl_builder(&params, struct_vis));
     }
 
-    if should_gen_destr {
+    if destr {
         res.extend(impl_destr(&params, struct_vis));
     }
 
-    if should_gen_trymap {
+    if trymap {
         res.extend(impl_trymap(&params));
+    }
+
+    if zip {
+        res.extend(impl_zip(&params));
     }
 
     // finally, replace the struct defn with a single array field tuple struct

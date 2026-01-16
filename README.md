@@ -460,19 +460,20 @@ impl<T> Cartesian<T> {
                 Ok(written + 1)
             }
         );
-        if let Err(written) = written {
-            res.0.iter_mut().take(written).for_each(
-                |mu| unsafe { mu.assume_init_drop() }
-            );
-            None
-        } else {
-            Some(Cartesian(
+        match written {
+            Ok(_) => Some(Cartesian(
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(res.0)
                     )
                 }
-            ))
+            )),
+            Err(written) => {
+                res.0.iter_mut().take(written).for_each(
+                    |mu| unsafe { mu.assume_init_drop() }
+                );
+                None
+            }
         }
     }
 
@@ -490,21 +491,90 @@ impl<T> Cartesian<T> {
                 Ok(written + 1)
             }
         );
-        if let Err((e, written)) = written {
-            res.0.iter_mut().take(written).for_each(
-                |mu| unsafe { mu.assume_init_drop() }
-            );
-            Err(e)
-        } else {
-            Ok(Cartesian(
+        match written {
+            Ok(_) => Ok(Cartesian(
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(res.0)
                     )
                 }
-            ))
+            )),
+            Err((e, written)) => {
+                res.0.iter_mut().take(written).for_each(
+                    |mu| unsafe { mu.assume_init_drop() }
+                );
+                Err(e)
+            }
         }
     }
+}
+```
+
+#### `zip` Arg
+
+An optional `zip` prefix arg controls whether to generate the zip util methods.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(zip)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+expands to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+impl<T> Cartesian<T> {
+    #[inline]
+    pub fn zip<U>(self, Cartesian([u0, u1]): Cartesian<U>) -> Cartesian<(T, U)> {
+        let Self([t0, t1]) = self;
+        Cartesian([(t0, u0), (t1, u1)])
+    }
+}
+
+impl<T: Copy> Cartesian<T> {
+    #[inline]
+    pub const fn const_zip<U: Copy>(self, Cartesian([u0, u1]): Cartesian<U>) -> Cartesian<(T, U)> {
+        let Self([t0, t1]) = self;
+        Cartesian([(t0, u0), (t1, u1)])
+    }
+}
+```
+
+#### `all` Arg
+
+Instead of specifying each individual optional prefix arg, a single `all` arg can be specified to enable all of the above.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(all)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+is equivalent to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder destr trymap zip)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
 }
 ```
 
