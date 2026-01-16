@@ -512,7 +512,7 @@ impl<T> Cartesian<T> {
 
 #### `zip` Arg
 
-An optional `zip` prefix arg controls whether to generate the zip util methods.
+An optional `zip` prefix arg controls whether to generate the un/zip util methods.
 
 ```rust
 use generic_array_struct::generic_array_struct;
@@ -548,6 +548,22 @@ impl<T: Copy> Cartesian<T> {
     pub const fn const_zip<U: Copy>(self, Cartesian([u0, u1]): Cartesian<U>) -> Cartesian<(T, U)> {
         let Self([t0, t1]) = self;
         Cartesian([(t0, u0), (t1, u1)])
+    }
+}
+
+impl<T, U> Cartesian<(T, U)> {
+    #[inline]
+    pub fn unzip(self) -> (Cartesian<T>, Cartesian<U>) {
+        let Self([(t0, u0), (t1, u1)]) = self;
+        (Cartesian([t0, t1]), Cartesian([u0, u1]))
+    }
+}
+
+impl<T: Copy, U: Copy> Cartesian<(T, U)> {
+    #[inline]
+    pub const fn const_unzip(self) -> (Cartesian<T>, Cartesian<U>) {
+        let Self([(t0, u0), (t1, u1)]) = self;
+        (Cartesian([t0, t1]), Cartesian([u0, u1]))
     }
 }
 ```
