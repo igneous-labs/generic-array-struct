@@ -198,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn zip_basic() {
+    fn zip_unzip_basic() {
         const T: Rgb<u8> = Rgb([0, 1, 2]);
         const U: Rgb<f64> = Rgb([0.0, 1.0, 2.0]);
         const TU: Rgb<(u8, f64)> = T.const_zip(U);
