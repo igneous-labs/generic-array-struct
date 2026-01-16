@@ -22,19 +22,20 @@ pub(crate) fn impl_trymap(params: &GenericArrayStructParams) -> proc_macro2::Tok
                         Ok(written + 1)
                     }
                 );
-                if let Err(written) = written {
-                    res.0.iter_mut().take(written).for_each(
-                        |mu| unsafe { mu.assume_init_drop() }
-                    );
-                    None
-                } else {
-                    Some(#struct_id(
+                match written {
+                    Ok(_) => Some(#struct_id (
                         unsafe {
                             core::mem::transmute_copy::<_, _>(
                                 &core::mem::ManuallyDrop::new(res.0)
                             )
                         }
-                    ))
+                    )),
+                    Err(written) => {
+                        res.0.iter_mut().take(written).for_each(
+                            |mu| unsafe { mu.assume_init_drop() }
+                        );
+                        None
+                    }
                 }
             }
 
@@ -52,19 +53,20 @@ pub(crate) fn impl_trymap(params: &GenericArrayStructParams) -> proc_macro2::Tok
                         Ok(written + 1)
                     }
                 );
-                if let Err((e, written)) = written {
-                    res.0.iter_mut().take(written).for_each(
-                        |mu| unsafe { mu.assume_init_drop() }
-                    );
-                    Err(e)
-                } else {
-                    Ok(#struct_id (
+                match written {
+                    Ok(_) => Ok(#struct_id (
                         unsafe {
                             core::mem::transmute_copy::<_, _>(
                                 &core::mem::ManuallyDrop::new(res.0)
                             )
                         }
-                    ))
+                    )),
+                    Err((e, written)) => {
+                        res.0.iter_mut().take(written).for_each(
+                            |mu| unsafe { mu.assume_init_drop() }
+                        );
+                        Err(e)
+                    }
                 }
             }
         }

@@ -460,19 +460,20 @@ impl<T> Cartesian<T> {
                 Ok(written + 1)
             }
         );
-        if let Err(written) = written {
-            res.0.iter_mut().take(written).for_each(
-                |mu| unsafe { mu.assume_init_drop() }
-            );
-            None
-        } else {
-            Some(Cartesian(
+        match written {
+            Ok(_) => Some(Cartesian(
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(res.0)
                     )
                 }
-            ))
+            )),
+            Err(written) => {
+                res.0.iter_mut().take(written).for_each(
+                    |mu| unsafe { mu.assume_init_drop() }
+                );
+                None
+            }
         }
     }
 
@@ -490,19 +491,20 @@ impl<T> Cartesian<T> {
                 Ok(written + 1)
             }
         );
-        if let Err((e, written)) = written {
-            res.0.iter_mut().take(written).for_each(
-                |mu| unsafe { mu.assume_init_drop() }
-            );
-            Err(e)
-        } else {
-            Ok(Cartesian(
+        match written {
+            Ok(_) => Ok(Cartesian(
                 unsafe {
                     core::mem::transmute_copy::<_, _>(
                         &core::mem::ManuallyDrop::new(res.0)
                     )
                 }
-            ))
+            )),
+            Err((e, written)) => {
+                res.0.iter_mut().take(written).for_each(
+                    |mu| unsafe { mu.assume_init_drop() }
+                );
+                Err(e)
+            }
         }
     }
 }
