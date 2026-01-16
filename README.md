@@ -512,7 +512,7 @@ impl<T> Cartesian<T> {
 
 #### `zip` Arg
 
-An optional `zip` prefix arg controls whether to generate the `zip` util method
+An optional `zip` prefix arg controls whether to generate the zip util methods.
 
 ```rust
 use generic_array_struct::generic_array_struct;
