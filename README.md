@@ -510,6 +510,74 @@ impl<T> Cartesian<T> {
 }
 ```
 
+#### `zip` Arg
+
+An optional `zip` prefix arg controls whether to generate the `zip` util method
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(zip)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+expands to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+
+impl<T> Cartesian<T> {
+    #[inline]
+    pub fn zip<U>(self, Cartesian([u0, u1]): Cartesian<U>) -> Cartesian<(T, U)> {
+        let Self([t0, t1]) = self;
+        Cartesian([(t0, u0), (t1, u1)])
+    }
+}
+
+impl<T: Copy> Cartesian<T> {
+    #[inline]
+    pub const fn const_zip<U: Copy>(self, Cartesian([u0, u1]): Cartesian<U>) -> Cartesian<(T, U)> {
+        let Self([t0, t1]) = self;
+        Cartesian([(t0, u0), (t1, u1)])
+    }
+}
+```
+
+#### `all` Arg
+
+Instead of specifying each individual optional prefix arg, a single `all` arg can be specified to enable all of the above.
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(all)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
+is equivalent to
+
+```rust
+use generic_array_struct::generic_array_struct;
+
+#[generic_array_struct(builder destr trymap zip)]
+pub struct Cartesian<Z> {
+    pub x: Z,
+    pub y: Z,
+}
+```
+
 #### `.0` Visibility Attribute Arg
 
 The attribute's final position arg is a [`syn::Visibility`](`syn::Visibility`) that controls the visibility of the resulting `.0` array field. 
